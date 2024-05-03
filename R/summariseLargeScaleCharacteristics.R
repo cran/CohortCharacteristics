@@ -41,21 +41,21 @@
 #' cdm <- CohortCharacteristics::mockCohortCharacteristics()
 #'
 #' concept <- dplyr::tibble(
-#' concept_id = c(1125315, 1503328, 1516978, 317009, 378253, 4266367),
-#' domain_id = NA_character_,
-#' vocabulary_id = NA_character_,
-#' concept_class_id = NA_character_,
-#' concept_code = NA_character_,
-#' valid_start_date = as.Date("1900-01-01"),
-#' valid_end_date = as.Date("2099-01-01")
+#'   concept_id = c(1125315, 1503328, 1516978, 317009, 378253, 4266367),
+#'   domain_id = NA_character_,
+#'   vocabulary_id = NA_character_,
+#'   concept_class_id = NA_character_,
+#'   concept_code = NA_character_,
+#'   valid_start_date = as.Date("1900-01-01"),
+#'   valid_end_date = as.Date("2099-01-01")
 #' ) |>
-#'  dplyr::mutate(concept_name = paste0("concept: ", .data$concept_id))
+#'   dplyr::mutate(concept_name = paste0("concept: ", .data$concept_id))
 #' cdm <- CDMConnector::insertTable(cdm, "concept", concept)
 #' results <- cdm$cohort2 |>
-#' summariseLargeScaleCharacteristics(
-#'  episodeInWindow = c("condition_occurrence"),
-#'  minimumFrequency = 0
-#'  )
+#'   summariseLargeScaleCharacteristics(
+#'     episodeInWindow = c("condition_occurrence"),
+#'     minimumFrequency = 0
+#'   )
 #' CDMConnector::cdmDisconnect(cdm = cdm)
 #' }
 summariseLargeScaleCharacteristics <- function(cohort,
@@ -89,7 +89,7 @@ summariseLargeScaleCharacteristics <- function(cohort,
   )
   checkmate::assertSubset(eventInWindow, tables)
   checkmate::assertSubset(episodeInWindow, tables)
-  if (is.null(eventInWindow) & is.null(episodeInWindow)) {
+  if (is.null(eventInWindow) && is.null(episodeInWindow)) {
     cli::cli_abort("'eventInWindow' or 'episodeInWindow' must be provided")
   }
   checkmate::assertLogical(includeSource, any.missing = FALSE, len = 1)
@@ -100,16 +100,16 @@ summariseLargeScaleCharacteristics <- function(cohort,
 
   # warn if strata has missing values
   for (k in seq_along(strata)) {
-  missingWorkingStrata <- cohort |>
-    dplyr::filter(is.na(!!as.symbol(strata[[k]]))) |>
-    dplyr::tally() |>
-    dplyr::pull("n")
-  if(missingWorkingStrata > 0){
-    cli::cli_warn("{missingWorkingStrata} missing value{?s} in
+    missingWorkingStrata <- cohort |>
+      dplyr::filter(is.na(!!as.symbol(strata[[k]]))) |>
+      dplyr::tally() |>
+      dplyr::pull("n")
+    if (missingWorkingStrata > 0) {
+      cli::cli_warn("{missingWorkingStrata} missing value{?s} in
                     variable {strata[[k]]} will be dropped when
                     calculating stratified results")
+    }
   }
-}
 
   # add names to windows
   names(window) <- gsub("_", " ", gsub("m", "-", getWindowNames(window)))
@@ -132,8 +132,10 @@ summariseLargeScaleCharacteristics <- function(cohort,
   id <- cli::cli_status("")
   for (i in seq_along(unique(analyses$table))) {
     tab <- unique(analyses$table)[i]
-    cli::cli_status_update(id,
-                           " - getting characteristics from table {tab} ({i} of {length(unique(analyses$table))})")
+    cli::cli_status_update(
+      id,
+      " - getting characteristics from table {tab} ({i} of {length(unique(analyses$table))})"
+    )
     analysesTable <- analyses |> dplyr::filter(.data$table == .env$tab)
     table <- getTable(
       tab, x, includeSource, minWindow, maxWindow, tablePrefix, excludedCodes
@@ -155,7 +157,7 @@ summariseLargeScaleCharacteristics <- function(cohort,
               )
           )
       }
-      if ("source" %in% colnames(table) & analysis == "standard") {
+      if ("source" %in% colnames(table) && analysis == "standard") {
         tableAnalysis <- getTableAnalysis(table, type, "source", tablePrefix)
         for (win in seq_along(window)) {
           tableWindow <- getTableWindow(tableAnalysis, window[[win]], tablePrefix)
@@ -185,9 +187,6 @@ summariseLargeScaleCharacteristics <- function(cohort,
   # summarised_result format
   results <- results |>
     dplyr::mutate(
-      "result_type" = "summarised_large_scale_characteristics",
-      "package_name" = "CohortCharacteristics",
-      "package_version" = as.character(utils::packageVersion("CohortCharacteristics")),
       "variable_name" = .data$variable,
       "estimate_name" = .data$estimate_type,
       "estimate_value" = .data$estimate,
@@ -198,15 +197,29 @@ summariseLargeScaleCharacteristics <- function(cohort,
     dplyr::rename("concept_id" = "concept") |>
     visOmopResults::uniteAdditional(cols = c("concept_id")) |>
     dplyr::select(!c("estimate", "variable")) |>
-    appendSettings(colsSettings = c("table_name", "type", "analysis")) |>
     dplyr::select(dplyr::all_of(c(
-      "result_id",
-      "cdm_name", "result_type", "package_name", "package_version",
+      "cdm_name", "table_name", "type", "analysis",
       "group_name", "group_level", "strata_name", "strata_level",
       "variable_name", "variable_level", "estimate_name", "estimate_type",
       "estimate_value", "additional_name", "additional_level"
-    ))) |>
-    omopgenerics::newSummarisedResult()
+    )))
+
+  sets <- results |>
+    dplyr::select("table_name", "type", "analysis") |>
+    dplyr::distinct() |>
+    dplyr::mutate("result_id" = dplyr::row_number())
+
+  results <- results |>
+    dplyr::left_join(sets, by = c("table_name", "type", "analysis")) |>
+    dplyr::select(-"table_name", -"type", -"analysis") |>
+    omopgenerics::newSummarisedResult(
+      settings = sets |>
+        dplyr::mutate(
+          "result_type" = "summarised_large_scale_characteristics",
+          "package_name" = "CohortCharacteristics",
+          "package_version" = as.character(utils::packageVersion("CohortCharacteristics"))
+        )
+    )
 
   # eliminate permanent tables
   cdm <- omopgenerics::dropTable(cdm = cdm, name = dplyr::starts_with(tablePrefix))
@@ -265,7 +278,8 @@ getInitialTable <- function(cohort, tablePrefix, indexDate, censorDate) {
   }
   x <- x |>
     dplyr::select(
-      "subject_id", "cohort_start_date" = dplyr::all_of(indexDate), "start_obs",
+      "subject_id",
+      "cohort_start_date" = dplyr::all_of(indexDate), "start_obs",
       "end_obs"
     ) |>
     dplyr::distinct() |>
@@ -330,7 +344,8 @@ getTable <- function(tab, x, includeSource, minWindow, maxWindow, tablePrefix, e
     if ("source" %in% colnames(table)) {
       table <- table |>
         dplyr::anti_join(
-          cdm[[nm]] |> dplyr::rename("source" = "standard"), by = "source"
+          cdm[[nm]] |> dplyr::rename("source" = "standard"),
+          by = "source"
         )
     }
   }
@@ -407,7 +422,7 @@ denominatorCounts <- function(cohort, x, strata, window, tablePrefix) {
   return(den)
 }
 formatLscResult <- function(lsc, den, cdm, minimumFrequency) {
-  lsc |>
+  lsc <- lsc |>
     dplyr::inner_join(
       den |>
         dplyr::rename("denominator" = "count") |>
@@ -416,10 +431,25 @@ formatLscResult <- function(lsc, den, cdm, minimumFrequency) {
         "strata_name", "strata_level", "group_name", "group_level",
         "window_name"
       )
-    ) |>
+    )
+
+  start_rows <- lsc |>
+    dplyr::tally() |>
+    dplyr::pull("n")
+  lsc <- lsc |>
     dplyr::mutate(percentage = round(100 * .data$count / .data$denominator, 2)) |>
     dplyr::select(-"denominator") |>
-    dplyr::filter(.data$percentage >= 100 * .env$minimumFrequency) |>
+    dplyr::filter(.data$percentage >= 100 * .env$minimumFrequency)
+  end_rows <- lsc |>
+    dplyr::tally() |>
+    dplyr::pull("n")
+
+  if (end_rows < start_rows) {
+    cli::cli_inform("{start_rows - end_rows} estimate{?s} dropped as
+                  frequency less than {paste0(minimumFrequency*100)}%")
+  }
+
+  lsc <- lsc |>
     tidyr::pivot_longer(
       cols = c("count", "percentage"), names_to = "estimate_type",
       values_to = "estimate"
@@ -436,6 +466,8 @@ formatLscResult <- function(lsc, den, cdm, minimumFrequency) {
       "variable" = "concept_name", "variable_level" = "window_name",
       "estimate_type", "estimate"
     )
+
+  lsc
 }
 addConceptName <- function(lsc, cdm) {
   concepts <- lsc |>
@@ -443,10 +475,12 @@ addConceptName <- function(lsc, cdm) {
     dplyr::distinct()
 
   conceptsTblName <- omopgenerics::uniqueTableName(omopgenerics::tmpPrefix())
-  cdm <- omopgenerics::insertTable(cdm = cdm,
-                                   name = conceptsTblName,
-                                   table = concepts,
-                                   overwrite = TRUE )
+  cdm <- omopgenerics::insertTable(
+    cdm = cdm,
+    name = conceptsTblName,
+    table = concepts,
+    overwrite = TRUE
+  )
 
   conceptNames <- cdm[["concept"]] |>
     dplyr::select("concept" = "concept_id", "concept_name") |>
@@ -567,47 +601,4 @@ trimCounts <- function(lsc, tableWindow, minimumCount, tablePrefix, winName) {
       )
   }
   return(lsc)
-}
-appendSettings <- function(results, colsSettings) {
-  ids <- results |>
-    dplyr::select(dplyr::all_of(colsSettings)) |>
-    dplyr::distinct() |>
-    dplyr::mutate("result_id" = as.integer(dplyr::row_number()))
-  results <- results |>
-    dplyr::left_join(ids, by = colsSettings) |>
-    dplyr::select(!dplyr::all_of(colsSettings))
-  settingsIds <- ids |>
-    tidyr::pivot_longer(
-      cols = dplyr::all_of(colsSettings),
-      names_to = "estimate_name",
-      values_to = "estimate_value"
-    ) |>
-    dplyr::inner_join(
-      PatientProfiles::variableTypes(ids) |>
-        dplyr::select(
-          "estimate_name" = "variable_name", "estimate_type" = "variable_type"
-        ) |>
-        dplyr::mutate("estimate_type" = dplyr::if_else(
-          .data$estimate_type == "categorical", "character", .data$estimate_type
-        )),
-      by = "estimate_name"
-    ) |>
-    dplyr::mutate(
-      "variable_name" = "settings",
-      "variable_level" = NA_character_,
-      "group_name" = "overall",
-      "group_level" = "overall",
-      "strata_name" = "overall",
-      "strata_level" = "overall",
-      "additional_name" = "overall",
-      "additional_level" = "overall",
-      "package_name" = results$package_name[1],
-      "package_version" = results$package_version[1],
-      "result_type" = results$result_type[1],
-      "cdm_name" = results$cdm_name[1]
-    )
-  results <- settingsIds |>
-    dplyr::union_all(results) |>
-    dplyr::arrange(.data$result_id)
-  return(results)
 }

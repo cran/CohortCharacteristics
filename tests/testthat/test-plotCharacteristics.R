@@ -60,11 +60,13 @@ test_that("test plot", {
   cdm$dus_cohort <- omopgenerics::newCohortTable(
     table = cdm$dus_cohort, cohortSetRef = dplyr::tibble(
       cohort_definition_id = c(1, 2), cohort_name = c("exposed", "unexposed")
-    ))
+    )
+  )
   cdm$comorbidities <- omopgenerics::newCohortTable(
     table = cdm$comorbidities, cohortSetRef = dplyr::tibble(
       cohort_definition_id = c(1, 2), cohort_name = c("covid", "headache")
-    ))
+    )
+  )
   cdm$medication <- omopgenerics::newCohortTable(
     table = cdm$medication,
     cohortSetRef = dplyr::tibble(
@@ -75,62 +77,63 @@ test_that("test plot", {
   )
   test_data <- summariseCharacteristics(
     cdm$dus_cohort,
-    cohortIntersect = list(
+    cohortIntersectFlag = list(
       "Medications" = list(
-        targetCohortTable = "medication", value = "flag", window = c(-365, 0)
+        targetCohortTable = "medication", window = c(-365, 0)
       ),
       "Comorbidities" = list(
-        targetCohortTable = "comorbidities", value = "flag", window = c(-Inf, 0)
+        targetCohortTable = "comorbidities", window = c(-Inf, 0)
       )
     )
   )
 
-  #barplot
+  # barplot
   plot <- plotCharacteristics(
-    data =  test_data,
-    xAxis = "estimate_value",
-    yAxis = "variable_name",
+    data = test_data |>
+      dplyr::filter(
+        variable_name == "Medications",
+        estimate_type == "percentage"
+      ),
+    x = "variable_name",
     plotStyle = "barplot",
-    facetVarX = c("group_level"),
-    colorVars = c("variable_name", "variable_level")
+    facet = c("group_level"),
+    colour = c("variable_name", "variable_level")
   )
 
   expect_true(ggplot2::is.ggplot(plot))
 
-  #boxplot
+  # boxplot
   plot2 <- plotCharacteristics(
-    data =  test_data,
-    xAxis = "variable_name",
-    yAxis = "estimate_value",
+    data = test_data |>
+      dplyr::filter(variable_name == "Age"),
+    x = "variable_name",
     plotStyle = "boxplot",
-    facetVarX = "variable_name",
-    colorVars = c("group_level")
+    facet = "variable_name",
+    colour = c("group_level")
   )
 
   expect_true(ggplot2::is.ggplot(plot2))
 
   expect_no_error(plotCharacteristics(
-    data =  test_data,
-    xAxis = "variable_name",
-    yAxis = "estimate_value",
+    data = test_data |>
+      dplyr::filter(variable_name == "Age"),
+    x = "variable_name",
     plotStyle = "boxplot"
   ))
 
 
   expect_no_error(plotCharacteristics(
-    data =  test_data,
-    xAxis = "variable_name",
-    yAxis = "estimate_value",
+    data = test_data |>
+      dplyr::filter(variable_name == "Age"),
+    x = "variable_name",
     plotStyle = "barplot"
   ))
 
 
   expect_no_error(plotCharacteristics(
-    data =  test_data,
-    xAxis = "estimate_value",
-    yAxis = "variable_name",
+    data = test_data |>
+      dplyr::filter(variable_name == "Age"),
+    x = "estimate_value",
     plotStyle = "barplot"
   ))
-
-
 })

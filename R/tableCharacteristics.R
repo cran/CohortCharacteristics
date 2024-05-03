@@ -29,7 +29,6 @@
 #' @param split A vector containing the name-level groups to split ("group",
 #' "strata", "additional"), or an empty character vector to not split.
 #' @param groupColumn Column to use as group labels.
-#' @param minCellCount Counts below which results will be clouded.
 #' @param excludeColumns Columns to drop from the output table.
 #' @param .options Named list with additional formatting options.
 #' CohortCharacteristics::optionsTableCharacteristics() shows allowed arguments and
@@ -65,35 +64,76 @@ tableCharacteristics <- function(result,
                                  header = c("group"),
                                  split = c("group", "strata"),
                                  groupColumn = NULL,
-                                 minCellCount = 5,
-                                 excludeColumns = c("result_id", "result_type",
-                                                    "package_name", "package_version",
-                                                    "estimate_type", "additional_name",
-                                                    "additional_level"),
+                                 excludeColumns = c(
+                                   "result_id", "estimate_type",
+                                   "additional_name", "additional_level"
+                                 ),
                                  .options = list()) {
 
   # check input
+  intersects <- tidyr::expand_grid(
+    "type" = c("cohort", "concept", "table"),
+    "value" = c("flag", "count", "date", "days")
+  ) |>
+    dplyr::mutate("x" = paste0(
+      "summarised_", .data$type, "_intersect_", .data$value
+    )) |>
+    dplyr::pull("x")
   result <- omopgenerics::newSummarisedResult(result) |>
-    dplyr::filter(.data$result_type %in%
-                    c("summarised_characteristics", "summarised_demographics",
-                      "summarised_cohort_intersect", "summarised_concept_intersect",
-                      "summarised_table_intersect"))
+    visOmopResults::filterSettings(.data$result_type %in% c(
+      "summarised_characteristics", "summarised_demographics", intersects
+    ))
   checkmate::assertList(.options)
 
   # add default options
   .options <- defaultCharacteristicsOptions(.options)
 
+  # ensure results are nicely ordered
+  defaultVariableNames <- c(
+    "Number records", "Number subjects",
+    "Cohort start date", "Cohort end date",
+    "Sex",
+    "Age", "Age group",
+    "Prior observation",
+    "Future observation"
+  )
+  variableNames <- result |>
+    dplyr::select("variable_name") |>
+    dplyr::filter(!.data$variable_name %in% .env$defaultVariableNames) |>
+    dplyr::distinct() |>
+    dplyr::pull("variable_name")
+
+  variableLevels <- sort(result |>
+    dplyr::select("variable_level") |>
+    dplyr::filter(!is.na(.data$variable_level)) |>
+    dplyr::distinct() |>
+    dplyr::pull("variable_level"))
+
+  result <- result |>
+    dplyr::mutate(variable_name = factor(.data$variable_name,
+      levels = c(
+        defaultVariableNames,
+        variableNames
+      )
+    )) |>
+    dplyr::mutate(variable_level = factor(.data$variable_level,
+      levels = variableLevels
+    )) |>
+    dplyr::arrange(.data$variable_name, .data$variable_level) |>
+    dplyr::mutate(variable_name = as.character(.data$variable_name)) |>
+    dplyr::mutate(variable_level = as.character(.data$variable_level))
+
   # format table
-  result <- visOmopResults::formatTable(
+  result <- visOmopResults::visOmopTable(
     result = result,
     formatEstimateName = formatEstimateName,
     header = header,
     groupColumn = groupColumn,
     split = split,
     type = type,
-    minCellCount = minCellCount,
     excludeColumns = excludeColumns,
-    .options = .options)
+    .options = .options
+  )
 
   return(result)
 }
@@ -111,7 +151,7 @@ defaultCharacteristicsOptions <- function(.options) {
     "title" = NULL,
     "subtitle" = NULL,
     "caption" = NULL,
-    "groupNameAsColumn" = FALSE,
+    "groupAsColumn" = FALSE,
     "groupOrder" = NULL,
     "colsToMergeRows" = "all_columns"
   )
@@ -135,13 +175,9 @@ defaultCharacteristicsOptions <- function(.options) {
 #'
 #' @examples
 #' {
-#' optionsTableCharacteristics()
+#'   optionsTableCharacteristics()
 #' }
 #'
 optionsTableCharacteristics <- function() {
   return(defaultCharacteristicsOptions(NULL))
 }
-
-
-
-

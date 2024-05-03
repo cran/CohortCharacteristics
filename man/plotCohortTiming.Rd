@@ -7,11 +7,12 @@
 plotCohortTiming(
   result,
   plotType = "boxplot",
-  facetVarX = "variable_name",
-  facetVarY = "group_level",
-  colorVars = "group_level",
-  timingLabel = "{cohort_name_reference} &&& {cohort_name_comparator}",
-  uniqueCombinations = TRUE
+  timeScale = "days",
+  facet = NULL,
+  colour = NULL,
+  colourName = NULL,
+  uniqueCombinations = TRUE,
+  .options = list()
 )
 }
 \arguments{
@@ -20,17 +21,18 @@ plotCohortTiming(
 \item{plotType}{Type of desired formatted table, possibilities are "boxplot" and
 "density".}
 
-\item{facetVarX}{column in data to facet by on horizontal axis}
+\item{timeScale}{Time scale to plot results. Can be days or years.}
 
-\item{facetVarY}{column in data to facet by on vertical axis}
+\item{facet}{variables to facet by}
 
-\item{colorVars}{Column names to distinct by colors. default set to group_level}
+\item{colour}{Variables to use for colours}
 
-\item{timingLabel}{A glue expression to identify each plotted cohort
-overlap.}
+\item{colourName}{Colour legend name}
 
 \item{uniqueCombinations}{If TRUE, only unique combinations of reference and
 comparator plots will be plotted.}
+
+\item{.options}{Additional plotting options}
 }
 \value{
 A ggplot.

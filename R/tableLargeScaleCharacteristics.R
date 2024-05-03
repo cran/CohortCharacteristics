@@ -26,7 +26,6 @@
 #' columns.
 #' @param header Specify the headers of the table.
 #' @param topConcepts Number of concepts to restrict the table.
-#' @param minCellCount Minimum number of counts to display.
 #'
 #' @export
 #'
@@ -57,9 +56,12 @@ tableLargeScaleCharacteristics <- function(result,
                                            type = "gt",
                                            formatEstimateName = c("N (%)" = "<count> (<percentage>%)"),
                                            splitStrata = TRUE,
-                                           header = c("cdm name", "cohort name", "strata", "window name"),
-                                           topConcepts = 10,
-                                           minCellCount = 5) {
+                                           header = c(
+                                             "cdm name", "cohort name",
+                                             "strata", "window name"
+                                           ),
+                                           topConcepts = NULL) {
+
   assertClass(result, "summarised_result")
   assertLogical(splitStrata, length = 1)
   if (is.character(header)) {
@@ -68,29 +70,44 @@ tableLargeScaleCharacteristics <- function(result,
   }
   assertChoice(header, choices = c("cdm name", "cohort name", "strata", "window name"))
   result <- result |>
-    dplyr::filter(.data$result_type == "summarised_large_scale_characteristics")
+    visOmopResults::filterSettings(
+      .data$result_type == "summarised_large_scale_characteristics"
+    )
   if (nrow(result) == 0) {
     cli::cli_abort(
       "No summarised_large_scale_characteristics records where found in this result object"
     )
   }
-  sets <- result |>
-    dplyr::filter(.data$variable_name == "settings") |>
-    dplyr::select("result_id", "estimate_name", "estimate_value") |>
-    tidyr::pivot_wider(names_from = "estimate_name", values_from = "estimate_value") |>
+
+  # min cell count
+  settings <- omopgenerics::settings(result) |>
+    dplyr::filter(.data$result_type == "summarised_large_scale_characteristics")
+  if ("min_cell_count" %in% colnames(settings)) {
+    result <- result |>
+      dplyr::left_join(
+        settings |>
+          dplyr::select("result_id", "min_cell_count"),
+        by = "result_id"
+      ) |>
+      dplyr::mutate(estimate_value = dplyr::if_else(
+        is.na(.data$estimate_value), paste0("<", .data$min_cell_count), .data$estimate_value
+      )) |>
+      dplyr::select(!"min_cell_count")
+  } else {
+    cli::cli_inform(c("!" = "Results have not been suppressed."))
+  }
+
+  sets <- settings(result) |>
     dplyr::mutate("group" = paste0(
-      "Table: ", .data$table_name, "; Type: ", .data$type, "; Analysis: ",
-      .data$analysis
+      "Table: ", .data$table_name, " (", .data$type, " in window)"
     )) |>
     dplyr::select("result_id", "group")
   res <- result |>
-    dplyr::filter(.data$variable_name != "settings") |>
-    omopgenerics::suppress(minCellCount = minCellCount) |>
     visOmopResults::splitGroup() |>
     visOmopResults::splitAdditional() |>
     dplyr::inner_join(sets, by = "result_id") |>
     dplyr::rename("window_name" = "variable_level") |>
-    dplyr::select(!c("package_name", "package_version", "result_id", "result_type"))
+    dplyr::select(!"result_id")
   if (splitStrata) {
     res <- res |> visOmopResults::splitStrata()
     strataColumns <- visOmopResults::strataColumns(result)
@@ -107,32 +124,43 @@ tableLargeScaleCharacteristics <- function(result,
     dplyr::distinct() |>
     dplyr::group_by(.data$group) |>
     dplyr::mutate("order_id" = dplyr::row_number()) |>
-    dplyr::ungroup() |>
-    dplyr::filter(.data$order_id <= .env$topConcepts) |>
-    dplyr::select(-"group")
+    dplyr::ungroup()
+  if (!is.null(topConcepts)) {
+    top <- top |>
+      dplyr::filter(.data$order_id <= .env$topConcepts)
+  }
   res <- res |>
-    dplyr::inner_join(top, by = "concept_id") |>
+    dplyr::inner_join(
+      top |>
+        dplyr::select(-"group"),
+      by = "concept_id"
+    )
+
+  res <- res |>
     visOmopResults::formatEstimateValue() |>
+    dplyr::as_tibble() |>
     visOmopResults::formatEstimateName(estimateNameFormat = formatEstimateName) |>
     orderWindow() |>
-    dplyr::arrange(!!!rlang::syms(c(
-      "cdm_name", "cohort_name", strataColumns, "group", "window_id",
-      "order_id"
-    ))) |>
     dplyr::mutate(
       "Concept" = paste0(.data$variable_name, " (", .data$concept_id, ")")
     ) |>
+    dplyr::arrange(!!!rlang::syms(c(
+      "cdm_name", "cohort_name", "Concept",
+      strataColumns, "group", "window_id",
+      "order_id"
+    ))) |>
     dplyr::select(dplyr::all_of(c(
-      "group", "CDM name" = "cdm_name", "Cohort name" =  "cohort_name",
+      "group",
+      "CDM name" = "cdm_name", "Cohort name" = "cohort_name",
       strataColumns, "Concept", "Window" = "window_name", "estimate_value"
     )))
 
   header <- cleanHeader(header, strataColumns)
   tab <- visOmopResults::formatHeader(result = res, header = header)
   if (type == "gt") {
-    res <- visOmopResults::gtTable(tab, groupNameCol = "group")
+    res <- visOmopResults::gtTable(tab, groupColumn = "group")
   } else {
-    res <- visOmopResults::fxTable(tab, groupNameCol = "group")
+    res <- visOmopResults::fxTable(tab, groupColumn = "group")
   }
 
   return(res)
@@ -143,7 +171,7 @@ cleanHeader <- function(header, strata) {
   header[header == "window name"] <- "Window"
   if ("strata" %in% header) {
     id <- which(header == "strata")
-    header <- append(header, strata, after=id)
+    header <- append(header, strata, after = id)
     header <- header[header != "strata"]
   }
 }

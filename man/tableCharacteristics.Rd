@@ -13,9 +13,7 @@ tableCharacteristics(
   header = c("group"),
   split = c("group", "strata"),
   groupColumn = NULL,
-  minCellCount = 5,
-  excludeColumns = c("result_id", "result_type", "package_name", "package_version",
-    "estimate_type", "additional_name", "additional_level"),
+  excludeColumns = c("result_id", "estimate_type", "additional_name", "additional_level"),
   .options = list()
 )
 }
@@ -36,8 +34,6 @@ in order. Allowed are: `cdm_name`, `group`, `strata`, `additional`,
 "strata", "additional"), or an empty character vector to not split.}
 
 \item{groupColumn}{Column to use as group labels.}
-
-\item{minCellCount}{Counts below which results will be clouded.}
 
 \item{excludeColumns}{Columns to drop from the output table.}
 

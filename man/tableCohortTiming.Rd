@@ -6,20 +6,21 @@
 \usage{
 tableCohortTiming(
   result,
+  timeScale = "days",
   type = "gt",
   formatEstimateName = c(N = "<count>", `Median [Q25 - Q75]` =
     "<median> [<q25> - <q75>]", Range = "<min> - <max>"),
   header = c("strata"),
   split = c("group", "strata", "additional"),
   groupColumn = NULL,
-  minCellCount = 5,
-  excludeColumns = c("result_id", "result_type", "package_name", "package_version",
-    "estimate_type", "variable_level"),
+  excludeColumns = c("result_id", "estimate_type", "variable_level"),
   .options = list()
 )
 }
 \arguments{
 \item{result}{A summariseCohortTiming result}
+
+\item{timeScale}{Time scale to plot results. Can be days or years.}
 
 \item{type}{Type of desired formatted table, possibilities: "gt",
 "flextable", "tibble".}
@@ -35,8 +36,6 @@ in order. Allowed are: `cdm_name`, `group`, `strata`, `additional`,
 "strata", "additional"), or an empty character vector to not split.}
 
 \item{groupColumn}{Column to use as group labels.}
-
-\item{minCellCount}{Counts below which results will be clouded.}
 
 \item{excludeColumns}{Columns to drop from the output table.}
 

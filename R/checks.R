@@ -147,7 +147,6 @@ checkAgeGroup <- function(ageGroup, overlap = FALSE) {
       if (any(ageGroup[[k]] |> unlist() |> unique() < 0)) {
         cli::cli_abort("ageGroup can't contain negative values")
       }
-
     }
     if (is.null(names(ageGroup))) {
       names(ageGroup) <- paste0("age_group_", 1:length(ageGroup))
@@ -157,7 +156,7 @@ checkAgeGroup <- function(ageGroup, overlap = FALSE) {
       names(ageGroup)[id] <- paste0("age_group_", id)
     }
   }
-  invisible(ageGroup)
+  return(invisible(ageGroup))
 }
 
 #' @noRd
@@ -193,8 +192,12 @@ checkWindow <- function(window) {
   }
 
   names(window) <- getWindowNames(window)
-  lower <- lapply(window, function(x) {x[1]}) |> unlist()
-  upper <- lapply(window, function(x) {x[2]}) |> unlist()
+  lower <- lapply(window, function(x) {
+    x[1]
+  }) |> unlist()
+  upper <- lapply(window, function(x) {
+    x[2]
+  }) |> unlist()
 
   if (any(lower > upper)) {
     cli::cli_abort("First element in window must be smaller or equal to the second one")
@@ -389,7 +392,7 @@ checkSnakeCase <- function(name, verbose = TRUE) {
 
 #' @noRd
 checkExclude <- function(exclude) {
-  if (!is.null(exclude) & !is.character(exclude)) {
+  if (!is.null(exclude) && !is.character(exclude)) {
     cli::cli_abort("eclude must a character vector or NULL")
   }
 }
@@ -402,18 +405,20 @@ checkTable <- function(table) {
 }
 
 #' @noRd
-checkStrata <- function(list, table, type = "strata") {
+checkStrata <- function(strata, table, type = "strata") {
   errorMessage <- paste0(type, " should be a list that point to columns in table")
-  if (!is.list(list)) {
-    cli::cli_abort(errorMessage)
+  if (!is.list(strata)) {
+    strata <- list(strata)
   }
-  if (length(list) > 0) {
-    if (!is.character(unlist(list))) {
+  if (length(strata) > 0) {
+    if (!is.character(unlist(strata))) {
       cli::cli_abort(errorMessage)
     }
-    if (!all(unlist(list) %in% colnames(table))) {
-      notPresent <- list |> unlist() |> unique()
-      notPresent <- notPresent[! notPresent %in% colnames(table)]
+    if (!all(unlist(strata) %in% colnames(table))) {
+      notPresent <- strata |>
+        unlist() |>
+        unique()
+      notPresent <- notPresent[!notPresent %in% colnames(table)]
       cli::cli_abort(paste0(
         errorMessage,
         ". The following columns were not found in the data: ",
@@ -421,157 +426,35 @@ checkStrata <- function(list, table, type = "strata") {
       ))
     }
   }
+  return(invisible(strata))
 }
 
 #' @noRd
 checkSuppressCellCount <- function(suppressCellCount) {
   checkmate::assertIntegerish(
     suppressCellCount,
-    lower = 0, len = 1, any.missing = F
+    lower = 0, len = 1, any.missing = FALSE
   )
 }
 
 #' @noRd
 checkBigMark <- function(bigMark) {
-  checkmate::checkCharacter(bigMark, min.chars = 0, len = 1, any.missing = F)
+  checkmate::checkCharacter(bigMark, min.chars = 0, len = 1,
+                            any.missing = FALSE)
 }
 
 #' @noRd
 checkDecimalMark <- function(decimalMark) {
-  checkmate::checkCharacter(decimalMark, min.chars = 1, len = 1, any.missing = F)
+  checkmate::checkCharacter(decimalMark, min.chars = 1, len = 1,
+                            any.missing = FALSE)
 }
 
 #' @noRd
 checkSignificantDecimals <- function(significantDecimals) {
   checkmate::assertIntegerish(
     significantDecimals,
-    lower = 0, len = 1, any.missing = F
+    lower = 0, len = 1, any.missing = FALSE
   )
-}
-
-#' @noRd
-checkTableIntersect <- function(tableIntersect, cdm) {
-  checkmate::assertList(tableIntersect)
-  arguments <- getArguments(PatientProfiles::addTableIntersect)
-  tableIntersect <- assertInputIntersect(
-    inputList = tableIntersect,
-    possibleArguments = c(arguments$all, "value"),
-    compulsoryArguments = arguments$compulsory,
-    nameFunction = "tableIntersect",
-    cdm = cdm
-  )
-  tableIntersect <- editNamesIntersect(tableIntersect)
-  return(tableIntersect)
-}
-
-assertInputIntersect <- function(inputList,
-                                 possibleArguments,
-                                 compulsoryArguments,
-                                 nameFunction,
-                                 cdm = NULL) {
-  if (length(inputList) > 0) {
-    if (!is.list(inputList[[1]])) {
-      inputList <- list(inputList)
-    }
-  }
-  lapply(inputList, function(x) {
-    if (!is.list(x) | length(names(x)) != length(x)) {
-      cli::cli_abort(
-        "inputs of {nameFunction} must be a named list, see examples."
-      )
-    }
-    allArgs <- names(x)
-    notValidArgs <- allArgs[!allArgs %in% possibleArguments]
-    if (length(notValidArgs) > 0) {
-      cli::cli_alert_danger(
-        "Not valid args for {nameFunction}: {paste0(notValidArgs, collapse = ', ')}."
-      )
-    }
-    notPresent <- compulsoryArguments[!compulsoryArguments %in% names(x)]
-    if (length(notPresent) > 0) {
-      cli::cli_abort(
-        "Required arguments not provided for {nameFunction}: {paste0(notPresent, collapse = ', ')}"
-      )
-    }
-    if (!is.null(cdm)) {
-      values <- c("count", "flag", "date", "days", colnames(cdm[[x$tableName]]))
-    } else {
-      values <- c("count", "flag", "date", "days")
-    }
-    val <- x$value[!x$value %in% values]
-    if (length(val) > 0) {
-      cli::cli_abort(
-        "Wrong value for {nameFunction}: {paste0(val, collapse = ', ')}. Possible values: {paste0(values, collapse = ', ')}"
-      )
-    }
-  })
-  return(inputList)
-}
-editNamesIntersect <- function(inputList) {
-  if (length(inputList) > 0) {
-    nms <- names(inputList)
-    if (is.null(nms)) {
-      nms <- rep("", length(nms))
-    }
-    for (k in seq_along(nms)) {
-      if (nms[k] == "") {
-        nams <- names(inputList[[k]])
-        if ("tableName" %in% nams) {
-          tblName <- inputList[[k]]$tableName
-        } else if ("conceptSet" %in% nams) {
-          tblName <- "Concepts"
-        } else {
-          tblName <- inputList[[k]]$targetCohortTable
-        }
-        value <- inputList[[k]]$value |> paste0(collapse = "+")
-        winName <- getWindowNames(inputList[[k]]$window) |> paste0(collapse = "+")
-        nms[k] <- paste(tblName, value, winName)
-      }
-    }
-    names(inputList) <- nms
-  }
-  return(inputList)
-}
-getArguments <- function(fun) {
-  arguments <- formals(fun)
-  compulsory <- character()
-  for (k in seq_along(arguments)) {
-    x <- arguments[[k]]
-    if (missing(x)) {
-      compulsory <- c(compulsory, names(arguments)[k])
-    }
-  }
-  compulsory <- compulsory[compulsory != "x"]
-  all <- names(arguments)
-  return(list(all = all, compulsory = compulsory))
-}
-
-#' @noRd
-checkCohortIntersect <- function(cohortIntersect, cdm) {
-  checkmate::assertList(cohortIntersect)
-  arguments <- getArguments(addCohortIntersect)
-  cohortIntersect <- assertInputIntersect(
-    inputList = cohortIntersect,
-    possibleArguments = arguments$all,
-    compulsoryArguments = arguments$compulsory,
-    nameFunction = "cohortIntersect"
-  )
-  cohortIntersect <- editNamesIntersect(cohortIntersect)
-  return(cohortIntersect)
-}
-
-#' @noRd
-checkConceptIntersect <- function(conceptIntersect, cdm) {
-  checkmate::assertList(conceptIntersect)
-  arguments <- getArguments(addConceptIntersect)
-  conceptIntersect <- assertInputIntersect(
-    inputList = conceptIntersect,
-    possibleArguments = c(arguments$all, "value"),
-    compulsoryArguments = arguments$compulsory,
-    nameFunction = "conceptIntersect"
-  )
-  conceptIntersect <- editNamesIntersect(conceptIntersect)
-  return(conceptIntersect)
 }
 
 #' @noRd
@@ -588,14 +471,44 @@ checkCensorDate <- function(x, censorDate) {
 
 #' @noRd
 checkOtherVariables <- function(otherVariables, cohort, call = rlang::env_parent()) {
-  errorMessage <- "otherVariables must point to columns in cohort."
-  if (!is.character(otherVariables)) {
-    cli::cli_abort(errorMessage, call = call)
+  if (!is.list(otherVariables)) {
+    otherVariables <- list(otherVariables)
   }
-  if (!all(otherVariables %in% colnames(cohort))) {
-    cli::cli_abort(errorMessage, call = call)
+  assertList(otherVariables, class = "character", call = call)
+  if (!all(unlist(otherVariables) %in% colnames(cohort))) {
+    cli::cli_abort("otherVariables must point to columns in cohort.", call = call)
   }
-  invisible(otherVariables)
+  if (is.null(names(otherVariables))) {
+    names(otherVariables) <- paste0("other_", seq_along(otherVariables))
+  }
+  return(invisible(otherVariables))
+}
+
+#' @noRd
+checkOtherVariablesEstimates <- function(otherVariablesEstimates, otherVariables, call = rlang::env_parent()) {
+  if (!is.list(otherVariablesEstimates)) {
+    otherVariablesEstimates <- list(otherVariablesEstimates)
+  }
+  assertList(otherVariablesEstimates, class = "character", call = call)
+  allEstimates <- PatientProfiles::availableEstimates(fullQuantiles = TRUE) |>
+    dplyr::pull("estimate_name") |>
+    unique()
+  notEstimate <- unique(unlist(otherVariablesEstimates))
+  notEstimate <- notEstimate[!notEstimate %in% allEstimates]
+  if (length(notEstimate) > 0) {
+    cli::cli_abort(
+      "Not valid estimates found in otherVariablesEstimates: {notEstimate}.
+      Please see valid estimates in: PatientProfiles::availableEstimates()",
+      call = call
+    )
+  }
+  if (length(otherVariablesEstimates) == 1 && length(otherVariables) > 1) {
+    otherVariablesEstimates <- rep(otherVariablesEstimates, length(otherVariables))
+  }
+  if (is.null(names(otherVariablesEstimates))) {
+    names(otherVariablesEstimates) <- paste0("other_", seq_along(otherVariablesEstimates))
+  }
+  return(invisible(otherVariablesEstimates))
 }
 
 assertClass <- function(x,
@@ -606,14 +519,15 @@ assertClass <- function(x,
   errorMessage <- paste0(
     paste0(substitute(x), collapse = ""), " must have class: ",
     paste0(class, collapse = ", "), "; but has class: ",
-    paste0(base::class(x), collapse = ", ") ,"."
+    paste0(base::class(x), collapse = ", "), "."
   )
   if (is.null(x)) {
     if (null) {
       return(invisible(x))
     } else {
       cli::cli_abort(
-        "{paste0(substitute(x), collapse = '')} can not be NULL.", call = call
+        "{paste0(substitute(x), collapse = '')} can not be NULL.",
+        call = call
       )
     }
   }
@@ -624,8 +538,8 @@ assertClass <- function(x,
 }
 
 correctStrata <- function(strata, overall) {
-  if (length(strata) == 0 | overall) {
-    strata = c(list(character()), strata)
+  if (length(strata) == 0 || overall) {
+    strata <- c(list(character()), strata)
   }
   strata <- unique(strata)
   return(strata)
@@ -677,7 +591,6 @@ assertCharacter <- function(x,
 
   # assert null
   if (assertNull(x, null, errorMessage, call)) {
-
     # assert class
     if (!is.character(x)) {
       cli::cli_abort(errorMessage, call = call)
@@ -728,7 +641,6 @@ assertList <- function(x,
 
   # assert null
   if (assertNull(x, null, errorMessage, call)) {
-
     # assert class
     if (!is.list(x)) {
       cli::cli_abort(errorMessage, call = call)
@@ -782,7 +694,6 @@ assertChoice <- function(x,
 
   # assert null
   if (assertNull(x, null, errorMessage, call)) {
-
     # assert class
     if (!all(class(x) == class(choices))) {
       cli::cli_abort(errorMessage, call = call)
@@ -871,7 +782,6 @@ assertNumeric <- function(x,
 
   # assert null
   if (assertNull(x, null, errorMessage, call)) {
-
     # assert class
     if (!is.numeric(x)) {
       cli::cli_abort(errorMessage, call = call)
@@ -881,7 +791,7 @@ assertNumeric <- function(x,
     xNoNa <- x[!is.na(x)]
 
     # assert integerish
-    if (integerish & base::length(xNoNa) > 0) {
+    if (integerish && base::length(xNoNa) > 0) {
       err <- max(abs(xNoNa - round(xNoNa)))
       if (err > 0.0001) {
         cli::cli_abort(errorMessage, call = call)
@@ -889,14 +799,14 @@ assertNumeric <- function(x,
     }
 
     # assert lower bound
-    if (!is.infinite(min) & base::length(xNoNa) > 0) {
+    if (!is.infinite(min) && base::length(xNoNa) > 0) {
       if (base::min(xNoNa) < min) {
         cli::cli_abort(errorMessage, call = call)
       }
     }
 
     # assert upper bound
-    if (!is.infinite(max) & base::length(xNoNa) > 0) {
+    if (!is.infinite(max) && base::length(xNoNa) > 0) {
       if (base::max(xNoNa) > max) {
         cli::cli_abort(errorMessage, call = call)
       }
@@ -970,14 +880,15 @@ assertClass <- function(x,
   errorMessage <- paste0(
     paste0(substitute(x), collapse = ""), " must have class: ",
     paste0(class, collapse = ", "), "; but has class: ",
-    paste0(base::class(x), collapse = ", ") ,"."
+    paste0(base::class(x), collapse = ", "), "."
   )
   if (is.null(x)) {
     if (null) {
       return(invisible(x))
     } else {
       cli::cli_abort(
-        "{paste0(substitute(x), collapse = '')} can not be NULL.", call = call
+        "{paste0(substitute(x), collapse = '')} can not be NULL.",
+        call = call
       )
     }
   }
@@ -1041,4 +952,87 @@ errorNull <- function(null) {
     str <- "; it can not be NULL"
   }
   return(str)
+}
+assertIntersect <- function(intersect) {
+  name <- substitute(intersect)
+  functionName <- paste0(
+    "PatientProfiles::add", toupper(substr(name, 1, 1)),
+    substr(name, 2, nchar(name))
+  )
+  arguments <- formals(eval(parse(text = functionName)))
+  arguments <- arguments[!names(arguments) %in% c("x", "cdm")]
+
+  if (any(c("targetCohortTable", "tableName", "conceptSet") %in% names(intersect))) {
+    intersect <- list(intersect)
+  }
+
+  namesIntersect <- names(intersect)
+  if (is.null(namesIntersect)) {
+    namesIntersect <- rep("", length(intersect))
+  }
+
+  for (k in seq_along(intersect)) {
+    # get variables
+    nams <- names(intersect[[k]])
+
+    # validate
+    extraArguments <- names(intersect[[k]])
+    extraArguments <- extraArguments[!extraArguments %in% names(arguments)]
+    if (length(extraArguments) > 0) {
+      cli::cli_abort(c(
+        "{extraArguments} are not arguments of {functionName}()."
+      ))
+    }
+    required <- character()
+    for (kk in seq_along(arguments)) {
+      x <- arguments[[kk]]
+      if (missing(x)) {
+        required <- c(required, names(arguments)[kk])
+      }
+    }
+    notPresent <- required[!required %in% names(intersect[[k]])]
+    if (length(notPresent) > 0) {
+      cli::cli_abort(c(
+        "{notPresent} need to be provided for {functionName}()."
+      ))
+    }
+    if ("window" %in% nams) {
+      if (!is.list(intersect[[k]]$window)) {
+        intersect[[k]]$window <- list(intersect[[k]]$window)
+      }
+      if (length(intersect[[k]]$window) != 1) {
+        cli::cli_abort("{name}: only one window can be provided, please see examples.")
+      }
+      if (is.null(names(intersect[[k]]$window))) {
+        names(intersect[[k]]$window) <- getWindowName(intersect[[k]]$window)
+      } else if (names(intersect[[k]]$window) == "") {
+        names(intersect[[k]]$window) <- getWindowName(intersect[[k]]$window)
+      }
+    } else {
+      cli::cli_abort("{name}: please provide window argument.")
+    }
+
+    # add names if missing
+    if (namesIntersect[k] == "") {
+      if ("tableName" %in% nams) {
+        tblName <- intersect[[k]]$tableName
+      } else if ("conceptSet" %in% nams) {
+        tblName <- "Concepts"
+      } else {
+        tblName <- intersect[[k]]$targetCohortTable
+      }
+      value <- name |>
+        as.character() |>
+        getValue()
+      winName <- getWindowNames(intersect[[k]]$window)
+      namesIntersect[k] <- paste(tblName, value, winName)
+    }
+  }
+
+  names(intersect) <- namesIntersect
+
+  return(invisible(intersect))
+}
+getWindowName <- function(win) {
+  paste0(win[[1]][1], " to ", win[[1]][2])
 }

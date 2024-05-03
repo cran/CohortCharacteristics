@@ -7,31 +7,28 @@
 \usage{
 plotCharacteristics(
   data,
-  xAxis = "variable_name",
-  yAxis = "estimate_value",
+  x = "variable_name",
   plotStyle = "barplot",
-  facetVarX = NULL,
-  facetVarY = NULL,
-  colorVars = NULL,
-  vertical_x = FALSE
+  facet = NULL,
+  colour = NULL,
+  colourName = NULL,
+  .options = list()
 )
 }
 \arguments{
 \item{data}{output of summariseCharacteristics.}
 
-\item{xAxis}{what to plot on x axis, default as variable_name column. Has to be a column in data.}
-
-\item{yAxis}{what to plot on y axis, default as estimate_value column. Has to be a column in data. One of the xAxis or yAxis has to be estimate_value.}
+\item{x}{what to plot on x axis, default as variable_name column. Has to be a column in data.}
 
 \item{plotStyle}{Now allows boxplot or barplot only.}
 
-\item{facetVarX}{column in data to facet by on horizontal axis}
+\item{facet}{Variables to facet by}
 
-\item{facetVarY}{column in data to facet by on vertical axis}
+\item{colour}{column in data to color by.}
 
-\item{colorVars}{column in data to color by.}
+\item{colourName}{Colour legend name}
 
-\item{vertical_x}{whether to display x axis string vertically.}
+\item{.options}{Additional plotting options.}
 }
 \value{
 A ggplot.
@@ -43,21 +40,36 @@ Create a ggplot from the output of summariseCharacteristics.
 \examples{
 \donttest{
 library(CohortCharacteristics)
+library(dplyr)
 
 cdm <- mockCohortCharacteristics()
 
 results <- summariseCharacteristics(
   cohort = cdm$cohort1,
   ageGroup = list(c(0, 19), c(20, 39), c(40, 59), c(60, 79), c(80, 150)),
-  tableIntersect = list(
-    tableName = "visit_occurrence", value = "count", window = c(-365, -1)
+  tableIntersectCount = list(
+    tableName = "visit_occurrence", window = c(-365, -1)
   ),
-  cohortIntersect = list(
-    targetCohortTable = "cohort2", value = "flag", window = c(-365, -1)
+  cohortIntersectFlag = list(
+    targetCohortTable = "cohort2", window = c(-365, -1)
   )
 )
 
-plotCharacteristics(results)
+results |>
+  filter(
+    variable_name == "Cohort2 flag -365 to -1",
+    estimate_name == "percentage"
+  ) |>
+  plotCharacteristics(
+    plotStyle = "barplot",
+    colour = "variable_level",
+    x = "variable_level",
+    facet = c(
+      "cdm_name",
+      "group_level",
+      "strata_level"
+    )
+  )
 
 CDMConnector::cdmDisconnect(cdm = cdm)
 }

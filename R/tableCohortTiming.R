@@ -19,6 +19,7 @@
 #' `r lifecycle::badge("experimental")`
 #'
 #' @param result A summariseCohortTiming result
+#' @param timeScale Time scale to plot results. Can be days or years.
 #' @param type Type of desired formatted table, possibilities: "gt",
 #' "flextable", "tibble".
 #' @param formatEstimateName Named list of estimate name's to join, sorted by
@@ -29,7 +30,6 @@
 #' @param split A vector containing the name-level groups to split ("group",
 #' "strata", "additional"), or an empty character vector to not split.
 #' @param groupColumn Column to use as group labels.
-#' @param minCellCount Counts below which results will be clouded.
 #' @param excludeColumns Columns to drop from the output table.
 #' @param .options named list with additional formatting options.
 #' CohortCharacteristics::optionsTableCohortTiming() shows allowed arguments and
@@ -49,6 +49,7 @@
 #' @export
 #'
 tableCohortTiming <- function(result,
+                              timeScale = "days",
                               type = "gt",
                               formatEstimateName = c(
                                 "N" = "<count>",
@@ -58,15 +59,16 @@ tableCohortTiming <- function(result,
                               header = c("strata"),
                               split = c("group", "strata", "additional"),
                               groupColumn = NULL,
-                              minCellCount = 5,
-                              excludeColumns = c("result_id", "result_type",
-                                                 "package_name", "package_version",
-                                                 "estimate_type", "variable_level"),
+                              excludeColumns = c(
+                                "result_id", "estimate_type", "variable_level"
+                              ),
                               .options = list()) {
+
   # initial checks
   result <- omopgenerics::newSummarisedResult(result) |>
-    dplyr::filter(.data$result_type == "cohort_timing")
+    visOmopResults::filterSettings(.data$result_type == "cohort_timing")
   checkmate::assertList(.options)
+  checkmate::assertChoice(timeScale, c("days", "years"))
 
   # defaults
   .options <- defaultTimingOptions(.options)
@@ -83,16 +85,34 @@ tableCohortTiming <- function(result,
       dplyr::arrange(dplyr::across(dplyr::all_of(c("cdm_name", "group_name", "group_level", "strata_name", "strata_level"))))
   }
 
+
+
+
+  if (timeScale == "years") {
+    x <- dplyr::bind_rows(
+      x |>
+        dplyr::filter(.data$variable_name != "days_between_cohort_entries"),
+      x |>
+        dplyr::filter(.data$variable_name == "days_between_cohort_entries") |>
+        dplyr::mutate(
+          estimate_value =
+            as.character(as.numeric(.data$estimate_value) / 365.25)
+        ) |>
+        dplyr::mutate(variable_name = "years_between_cohort_entries")
+    )
+  }
+
   # format table
-  result <- visOmopResults::formatTable(result = x,
-                                        formatEstimateName = formatEstimateName,
-                                        header = header,
-                                        groupColumn = groupColumn,
-                                        split = split,
-                                        type = type,
-                                        minCellCount = minCellCount,
-                                        excludeColumns = excludeColumns,
-                                        .options = .options)
+  result <- visOmopResults::visOmopTable(
+    result = x,
+    formatEstimateName = formatEstimateName,
+    header = header,
+    groupColumn = groupColumn,
+    split = split,
+    type = type,
+    excludeColumns = excludeColumns,
+    .options = .options
+  )
 
   return(result)
 }
@@ -112,7 +132,7 @@ defaultTimingOptions <- function(userOptions) {
     title = NULL,
     subtitle = NULL,
     caption = NULL,
-    groupNameAsColumn = FALSE,
+    groupAsColumn = FALSE,
     groupOrder = NULL,
     colsToMergeRows = "all_columns"
   )
@@ -139,9 +159,8 @@ defaultTimingOptions <- function(userOptions) {
 #'
 #' @examples
 #' {
-#' optionsTableCohortTiming()
+#'   optionsTableCohortTiming()
 #' }
-#'
 #'
 optionsTableCohortTiming <- function() {
   return(defaultTimingOptions(NULL))

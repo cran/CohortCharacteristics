@@ -29,7 +29,6 @@
 #' @param split A vector containing the name-level groups to split ("group",
 #' "strata", "additional"), or an empty character vector to not split.
 #' @param groupColumn Column to use as group labels.
-#' @param minCellCount Counts below which results will be clouded.
 #' @param excludeColumns Columns to drop from the output table.
 #' @param .options Named list with additional formatting options.
 #' CohortCharacteristics::optionsTableCohortOverlap() shows allowed arguments and
@@ -48,24 +47,31 @@
 #'
 #' @export
 #'
-tableCohortOverlap  <- function(result,
-                                type = "gt",
-                                formatEstimateName = c("N (%)" = "<count> (<percentage>%)"),
-                                header = c("strata"),
-                                split = c("group", "strata", "additional"),
-                                groupColumn = NULL,
-                                minCellCount = 5,
-                                excludeColumns = c("result_id", "result_type",
-                                                   "package_name", "package_version",
-                                                   "estimate_type"),
-                                .options = list()) {
+tableCohortOverlap <- function(result,
+                               type = "gt",
+                               formatEstimateName = c("N (%)" = "<count> (<percentage>%)"),
+                               header = c("strata"),
+                               split = c("group", "strata", "additional"),
+                               groupColumn = NULL,
+                               excludeColumns = c("result_id", "estimate_type"),
+                               .options = list()) {
+
   # initial checks
   result <- omopgenerics::newSummarisedResult(result) |>
-    dplyr::filter(.data$result_type == "cohort_overlap")
+    visOmopResults::filterSettings(.data$result_type == "cohort_overlap")
   checkmate::assertList(.options)
 
   # default
   .options <- defaultOverlapOptions(.options)
+
+  result <- result %>%
+    dplyr::mutate(
+      variable_name = dplyr::case_when(
+        variable_name == "overlap" ~ "in_both_cohorts",
+        variable_name == "comparator" ~ "only_in_comparator_cohort",
+        variable_name == "reference" ~ "only_in_reference_cohort"
+      )
+    )
 
   # unique reference - comparator combinations
   if (.options$uniqueCombinations) {
@@ -73,31 +79,50 @@ tableCohortOverlap  <- function(result,
       visOmopResults::splitGroup()
     x <- x |>
       getUniqueCombinations(order = sort(unique(x$cohort_name_reference))) |>
-      dplyr::mutate(variable_level = factor(.data$variable_level, levels = c("only_in_reference", "only_in_comparator", "overlap"))) |>
+      dplyr::mutate(variable_name = factor(.data$variable_name,
+        levels = c(
+          "only_in_reference_cohort",
+          "in_both_cohorts",
+          "only_in_comparator_cohort"
+        )
+      )) |>
       dplyr::arrange(dplyr::across(dplyr::all_of(
         c("result_id", "cdm_name", "cohort_name_reference", "cohort_name_comparator", "strata_name", "strata_level", "variable_name", "variable_level")
       ))) |>
-      dplyr::mutate(variable_level = as.character(.data$variable_level)) |>
+      dplyr::mutate(
+        variable_name = as.character(.data$variable_name),
+        variable_level = NA_character_
+      ) |>
       visOmopResults::uniteGroup(cols = c("cohort_name_reference", "cohort_name_comparator"))
   } else {
     x <- result |>
-      dplyr::mutate(variable_level = factor(.data$variable_level, levels = c("only_in_reference", "only_in_comparator", "overlap"))) |>
+      dplyr::mutate(variable_name = factor(.data$variable_name,
+        levels = c(
+          "only_in_reference_cohort",
+          "in_both_cohorts",
+          "only_in_comparator_cohort"
+        )
+      )) |>
       dplyr::arrange(dplyr::across(dplyr::all_of(
         c("result_id", "cdm_name", "group_name", "group_level", "strata_name", "strata_level", "variable_name", "variable_level")
       ))) |>
-      dplyr::mutate(variable_level = as.character(.data$variable_level))
+      dplyr::mutate(
+        variable_name = as.character(.data$variable_name),
+        variable_level = NA_character_
+      )
   }
 
   # format table
-  result <- visOmopResults::formatTable(result = x,
-                                        formatEstimateName = formatEstimateName,
-                                        header = c(header, "variable"),
-                                        groupColumn = groupColumn,
-                                        split = split,
-                                        type = type,
-                                        minCellCount = minCellCount,
-                                        excludeColumns = excludeColumns,
-                                        .options = .options)
+  result <- visOmopResults::visOmopTable(
+    result = x,
+    formatEstimateName = formatEstimateName,
+    header = c(header, "variable"),
+    groupColumn = groupColumn,
+    split = split,
+    type = type,
+    excludeColumns = excludeColumns,
+    .options = .options
+  )
 
   return(result)
 }
@@ -113,8 +138,7 @@ defaultOverlapOptions <- function(userOptions) {
     title = NULL,
     subtitle = NULL,
     caption = NULL,
-    groupNameCol = NULL,
-    groupNameAsColumn = FALSE,
+    groupAsColumn = FALSE,
     groupOrder = NULL,
     colsToMergeRows = "all_columns"
   )
@@ -139,7 +163,7 @@ defaultOverlapOptions <- function(userOptions) {
 #'
 #' @examples
 #' {
-#' optionsTableCohortOverlap()
+#'   optionsTableCohortOverlap()
 #' }
 #'
 optionsTableCohortOverlap <- function() {
@@ -153,12 +177,12 @@ formatOverlapEstimate <- function(count, percentage, .options) {
     niceNum(percentage, .options, "percentage"),
     "%)"
   )
-
 }
 niceNum <- function(num, .options, type) {
   trimws(format(round(num, .options$decimals[[type]]),
-                big.mark = .options$bigMark,
-                decimal.mark = .options$decimalMark,
-                nsmall = .options$decimals[[type]],
-                scientific = FALSE))
+    big.mark = .options$bigMark,
+    decimal.mark = .options$decimalMark,
+    nsmall = .options$decimals[[type]],
+    scientific = FALSE
+  ))
 }

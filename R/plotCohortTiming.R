@@ -21,13 +21,13 @@
 #' @param result A summariseCohortTiming result.
 #' @param plotType Type of desired formatted table, possibilities are "boxplot" and
 #' "density".
-#' @param facetVarX column in data to facet by on horizontal axis
-#' @param facetVarY column in data to facet by on vertical axis
-#' @param colorVars Column names to distinct by colors. default set to group_level
-#' @param timingLabel A glue expression to identify each plotted cohort
-#' overlap.
+#' @param timeScale Time scale to plot results. Can be days or years.
+#' @param facet variables to facet by
+#' @param colour Variables to use for colours
+#' @param colourName Colour legend name
 #' @param uniqueCombinations If TRUE, only unique combinations of reference and
 #' comparator plots will be plotted.
+#' @param .options Additional plotting options
 #'
 #' @return A ggplot.
 #' @export
@@ -43,29 +43,46 @@
 #'
 plotCohortTiming <- function(result,
                              plotType = "boxplot",
-                             facetVarX = "variable_name",
-                             facetVarY = "group_level",
-                             colorVars = "group_level",
-                             timingLabel = "{cohort_name_reference} &&& {cohort_name_comparator}",
-                             uniqueCombinations = TRUE) {
+                             timeScale = "days",
+                             facet = NULL,
+                             colour = NULL,
+                             colourName = NULL,
+                             uniqueCombinations = TRUE,
+                             .options = list()) {
   # initial checks
-  result <- omopgenerics::newSummarisedResult(result) |>
-    dplyr::filter(.data$result_type == "cohort_timing")
+  result <- omopgenerics::newSummarisedResult(result)
   checkmate::assertChoice(plotType, c("boxplot", "density"))
-  checkmate::assertCharacter(facetVarX, null.ok = TRUE)
-  checkmate::assertCharacter(facetVarY, null.ok = TRUE)
-  checkmate::assertCharacter(colorVars, null.ok = TRUE)
-  checkmate::assertCharacter(timingLabel)
+  checkmate::assertChoice(timeScale, c("days", "years"))
+  checkmate::assertCharacter(facet, null.ok = TRUE)
+  checkmate::assertCharacter(colour, null.ok = TRUE)
+  checkmate::assertCharacter(colourName, null.ok = TRUE, len = 1)
   checkmate::assertLogical(uniqueCombinations)
-  if (plotType == "density" & !"density"%in% result$variable_name) {
-    cli::cli_abort("Please provide a cohort timing summarised result with density estimates (use `density = TRUE` in summariseCohortTiming).")
+  if (plotType == "boxplot") {
+    result <- result |>
+      visOmopResults::filterSettings(.data$result_type == "cohort_timing")
+  } else if (plotType == "density") {
+    result <- result |>
+      visOmopResults::filterSettings(.data$result_type == "cohort_timing_density")
+    if (nrow(result) == 0) {
+      cli::cli_abort("Please provide a cohort timing summarised result with density estimates (use `density = TRUE` in summariseCohortTiming).")
+    }
   }
 
+  colorVars <- colour
+  facetVarX <- NULL
+  facetVarY <- NULL
 
-
+  if (is.null(.options[["facetNcols"]])) {
+    .options[["facetNcols"]] <- 1
+  }
+  if (is.null(.options[["facetScales"]])) {
+    .options[["facetScales"]] <- "free_y"
+  }
 
   # split table
-  x <- result |> visOmopResults::tidy(splitStrata = FALSE) |>
+  timingLabel <- "{cohort_name_reference} &&& {cohort_name_comparator}"
+  x <- result |>
+    visOmopResults::tidy(splitStrata = FALSE) |>
     dplyr::mutate(group_level = glue::glue(.env$timingLabel))
 
 
@@ -76,33 +93,74 @@ plotCohortTiming <- function(result,
   }
 
   suppressMessages(data_to_plot <- result |>
-                     dplyr::inner_join(x) |>
-                     dplyr::select(names(result)))
+    dplyr::inner_join(x) |>
+    dplyr::select(names(result)))
 
 
 
   # Plotting
+  data_to_plot <- data_to_plot |>
+    dplyr::filter(.data$estimate_type == "numeric") |>
+    dplyr::mutate(estimate_value = as.numeric(.data$estimate_value)) |>
+    dplyr::mutate(group_level = stringr::str_replace_all(.data$group_level,
+      pattern = "&&&",
+      replacement = "to"
+    ))
+
+  if (timeScale == "years") {
+    data_to_plot <- data_to_plot |>
+      dplyr::mutate(estimate_value = .data$estimate_value / 365.25)
+    if (plotType == "boxplot") {
+      data_to_plot <- data_to_plot |>
+        dplyr::mutate(variable_name = "years_between_cohort_entries")
+    }
+    xLab <- "Years between cohort entries"
+  } else {
+    xLab <- "Days between cohort entries"
+  }
+
   if (plotType == "boxplot") {
-    return(
-      gg <- plotCharacteristics(data_to_plot,
-                                xAxis = "estimate_value",
-                                yAxis = "group_level",
-                                facetVarX = facetVarX,
-                                facetVarY = facetVarY,
-                                colorVars = colorVars,
-                                plotStyle = "boxplot")
+    gg <- plotfunction(data_to_plot,
+      xAxis = "estimate_value",
+      yAxis = "group_level",
+      facetVarX = facetVarX,
+      facetVarY = facetVarY,
+      colorVars = colorVars,
+      plotStyle = "boxplot",
+      facet = facet,
+      .options = .options
     )
   } else if (plotType == "density") {
-    data_to_plot <- data_to_plot |> dplyr::filter(.data$variable_name == "density")
-    gg <- plotCharacteristics(data_to_plot,
-                              xAxis = "estimate_value",
-                              yAxis = "group_level",
-                              facetVarX = facetVarX,
-                              facetVarY = facetVarY,
-                              colorVars = colorVars,
-                              vertical_x = TRUE,
-                              plotStyle = "density")
+    data_to_plot <- data_to_plot |>
+      dplyr::filter(.data$variable_name == "density")
+    facet <- unique(c("group_level", facet))
+    gg <- plotfunction(data_to_plot,
+      xAxis = "estimate_value",
+      yAxis = "group_level",
+      facetVarX = facetVarX,
+      facetVarY = facetVarY,
+      colorVars = colorVars,
+      vertical_x = TRUE,
+      plotStyle = "density",
+      facet = facet,
+      .options = .options
+    )
+  }
 
+  gg <- gg +
+    ggplot2::theme_bw() +
+    ggplot2::labs(
+      title = ggplot2::element_blank(),
+      x = ggplot2::element_blank(),
+      y = xLab
+    )
+
+  if (!is.null(colourName)) {
+    gg <- gg +
+      ggplot2::labs(color = colourName)
+  } else {
+    gg <- gg +
+      ggplot2::labs(color = "")
   }
 
   return(gg)
