@@ -40,6 +40,19 @@ plotCohortTiming <- function(result,
                              colourName = NULL,
                              uniqueCombinations = TRUE,
                              .options = list()) {
+
+  rlang::check_installed("ggplot2")
+  rlang::check_installed("ggpubr")
+  rlang::check_installed("scales")
+  
+  if (!inherits(result, "summarised_result")) {
+    cli::cli_abort("x must be a summarised result")
+  }
+  if (nrow(result) == 0) {
+    cli::cli_warn("Empty result object")
+    return(emptyPlot())
+  }
+
   # initial checks
   result <- omopgenerics::newSummarisedResult(result)
   checkmate::assertChoice(plotType, c("boxplot", "density"))
@@ -54,10 +67,12 @@ plotCohortTiming <- function(result,
   } else if (plotType == "density") {
     result <- result |>
       visOmopResults::filterSettings(.data$result_type == "cohort_timing_density")
-    if (nrow(result) == 0) {
-      cli::cli_abort("Please provide a cohort timing summarised result with density estimates (use `density = TRUE` in summariseCohortTiming).")
-    }
   }
+
+  if (nrow(result) == 0) {
+    cli::cli_warn("No timing results found")
+    return(emptyPlot())
+    }
 
   colorVars <- colour
   facetVarX <- NULL
@@ -120,7 +135,13 @@ plotCohortTiming <- function(result,
       plotStyle = "boxplot",
       facet = facet,
       .options = .options
-    )
+    ) +
+      ggplot2::theme_bw() +
+      ggplot2::labs(
+        title = ggplot2::element_blank(),
+        x = ggplot2::element_blank(),
+        y = xLab
+      )
   } else if (plotType == "density") {
     data_to_plot <- data_to_plot |>
       dplyr::filter(.data$variable_name == "density")
@@ -135,16 +156,14 @@ plotCohortTiming <- function(result,
       plotStyle = "density",
       facet = facet,
       .options = .options
-    )
+    ) +
+      ggplot2::theme_bw() +
+      ggplot2::labs(
+        title = ggplot2::element_blank(),
+        x = xLab,
+        y = ggplot2::element_blank()
+      )
   }
-
-  gg <- gg +
-    ggplot2::theme_bw() +
-    ggplot2::labs(
-      title = ggplot2::element_blank(),
-      x = ggplot2::element_blank(),
-      y = xLab
-    )
 
   if (!is.null(colourName)) {
     gg <- gg +

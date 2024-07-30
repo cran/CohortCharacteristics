@@ -46,13 +46,21 @@
 #' }
 #'
 plotCohortAttrition <- function(x, cohortId = NULL) {
+
+  rlang::check_installed("DiagrammeR")
+
   if (!inherits(x, "summarised_result")) {
     cli::cli_abort("x must be the output of summariseCohortAttrition()")
+  }
+  if (nrow(x) == 0) {
+    cli::cli_warn("Empty result object")
+    return(emptyTable("Empty result object"))
   }
   x <- x |>
     visOmopResults::filterSettings(.data$result_type == "cohort_attrition")
   if (nrow(x) == 0) {
-    return(emptyTable("No attrition found in the result object."))
+    cli::cli_warn("No attrition found in the results")
+    return(emptyTable("No attrition found in the results"))
   }
   if (!is.null(cohortId)) {
     x <- x |>
@@ -76,6 +84,7 @@ plotCohortAttrition <- function(x, cohortId = NULL) {
       "reason_id", "reason", "number_records", "number_subjects",
       "excluded_records", "excluded_subjects"
     ) |>
+    dplyr::mutate(reason_id = as.numeric(.data$reason_id)) |>
     dplyr::arrange(.data$reason_id) |>
     dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
 
@@ -137,7 +146,6 @@ formatNum <- function(col) {
 
 createLabels <- function(x) {
   x <- x |>
-    dplyr::arrange(.data$reason_id) |>
     dplyr::mutate(
       number_subjects = formatNum(.data$number_subjects),
       number_records = formatNum(.data$number_records),
@@ -165,6 +173,7 @@ selectLabels <- function(xn) {
       dplyr::select("reason", "label")
 
     xn <- xn |>
+      dplyr::mutate(reason_id = as.numeric(.data$reason_id)) |>
       dplyr::mutate(
         label = dplyr::if_else(
           .data$reason_id == min(.data$reason_id),
@@ -215,28 +224,26 @@ getPositionMiddleBox <- function(p1) {
 }
 
 validateReason <- function(att) {
+  max_value <- 39
+
   n_char <- nchar(att$reason)
-  n_char_count <- round(n_char / 35)
-  n_char_count[n_char_count > 1] <- n_char_count[n_char_count > 1] - 1
+  n_char_count <- round(n_char / max_value)
+  n_char_count[n_char_count > 1] <- n_char_count[n_char_count > 1]
+  n_char_count[n_char_count == 1 & n_char < max_value] <- 0
 
   for (k in seq_len(nrow(att))) {
     cut <- seq_len(n_char_count[k])
-    cut <- cut * 35
-    positions <- unlist(gregexpr(" ", att$reason[k]))
+    empty_positions <- stringr::str_locate_all(att$reason[k]," ") |> unlist() |> unique()
 
-    matrix_positions <- matrix(positions, length(cut), length(positions), byrow = TRUE)
-
-    positions <- unique(matrix_positions[seq_len(length(cut)), apply(abs(matrix_positions - cut), 1, which.min)])
-
-    for (kk in positions) {
-      substr(att$reason[k], start = kk, stop = kk + 1) <- "\n"
+    if(n_char_count[k] != 0){
+      p <- stats::quantile(empty_positions, probs = seq_len(n_char_count[k])/(n_char_count[k]+1))
+      matrix_positions <- matrix(empty_positions, length(cut), length(empty_positions), byrow = TRUE)
+      positions <- unique(matrix_positions[seq_len(length(cut)), apply(abs(matrix_positions - p), 1, which.min)])
+      for(kk in positions){
+        substr(att$reason[k], start = kk, stop = kk) <- "\n"
+      }
     }
-
-    # Ensure that we do not have placed \n at the end of the string
-    att$reason[k] <- sub("\n$", "", att$reason[k])
   }
-
-
 
   return(att)
 }

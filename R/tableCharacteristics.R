@@ -70,7 +70,16 @@ tableCharacteristics <- function(result,
                                  ),
                                  .options = list()) {
 
-  # check input
+
+  if (!inherits(result, "summarised_result")) {
+    cli::cli_abort("result must be a summarised result")
+  }
+  if (nrow(result) == 0) {
+    cli::cli_warn("Empty result object")
+    return(emptyResultTable(type = type))
+  }
+
+   # check input
   intersects <- tidyr::expand_grid(
     "type" = c("cohort", "concept", "table"),
     "value" = c("flag", "count", "date", "days")
@@ -83,6 +92,12 @@ tableCharacteristics <- function(result,
     visOmopResults::filterSettings(.data$result_type %in% c(
       "summarised_characteristics", "summarised_demographics", intersects
     ))
+
+  if (nrow(result) == 0) {
+    cli::cli_warn("No characteristics results found")
+    return(emptyResultTable(type = type))
+  }
+
   checkmate::assertList(.options)
 
   # add default options
@@ -123,6 +138,25 @@ tableCharacteristics <- function(result,
     dplyr::mutate(variable_name = as.character(.data$variable_name)) |>
     dplyr::mutate(variable_level = as.character(.data$variable_level))
 
+  if (nrow(result)==0){
+    cli::cli_warn(
+      "Output is empty, perhaps your result_type is not supported by this function."
+    )
+   suppressWarnings(
+     # format table
+     result <- visOmopResults::visOmopTable(
+       result = result,
+       formatEstimateName = formatEstimateName,
+       header = header,
+       groupColumn = groupColumn,
+       split = split,
+       type = type,
+       excludeColumns = excludeColumns,
+       .options = .options
+     )
+   )
+  } else {
+
   # format table
   result <- visOmopResults::visOmopTable(
     result = result,
@@ -134,6 +168,7 @@ tableCharacteristics <- function(result,
     excludeColumns = excludeColumns,
     .options = .options
   )
+  }
 
   return(result)
 }
