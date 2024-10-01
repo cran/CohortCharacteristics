@@ -25,8 +25,7 @@
 #' cohort will be considered. If FALSE all entries per individual will be
 #' considered.
 #' @param estimates Summary statistics to use when summarising timing.
-#' @param density TRUE or FALSE. If TRUE, estimates for a density plot will
-#' also be computed.
+#' @param density deprecated.
 #'
 #' @return A summary of timing between entries into cohorts in the cohort table.
 #'
@@ -35,63 +34,57 @@
 #' @examples
 #' \donttest{
 #' library(CohortCharacteristics)
+#' library(dplyr, warn.conflicts = FALSE)
+#'
 #' cdm <- mockCohortCharacteristics(numberIndividuals = 100)
-#' summariseCohortTiming(cdm$cohort2) |> dplyr::glimpse()
-#' mockDisconnect(cdm = cdm)
+#'
+#' summariseCohortTiming(cdm$cohort2) |>
+#'   glimpse()
+#'
+#' mockDisconnect(cdm)
 #' }
 #'
-#' @importFrom dplyr %>%
 summariseCohortTiming <- function(cohort,
                                   cohortId = NULL,
                                   strata = list(),
                                   restrictToFirstEntry = TRUE,
-                                  estimates = c("min", "q25", "median", "q75", "max"),
-                                  density = FALSE) {
+                                  estimates = c("min", "q25", "median", "q75", "max", "density"),
+                                  density = lifecycle::deprecated()) {
+  if (lifecycle::is_present(density)) {
+    lifecycle::deprecate_soft(
+      when = "0.3.0", what = "summariseCohortTiming(density = )",
+      details = "Please include 'density' in the estimates vector instead."
+    )
+    if (density) estimates <- unique(c(estimates, "density"))
+  }
   # validate inputs
-  assertClass(cohort, "cohort_table")
-  checkmate::assertNumeric(cohortId, any.missing = FALSE, null.ok = TRUE)
+  cohort <- omopgenerics::validateCohortArgument(cohort)
+  cohortId <- omopgenerics::validateCohortIdArgument(cohortId, cohort)
+  omopgenerics::assertNumeric(cohortId, null = TRUE)
   checkStrata(strata, cohort)
-  checkmate::assertTRUE(all(c("cohort_definition_id", "subject_id", "cohort_start_date", "cohort_end_date") %in% colnames(cohort)))
-  checkmate::assertLogical(restrictToFirstEntry, any.missing = FALSE, len = 1, null.ok = FALSE)
-  checkmate::assertCharacter(estimates, any.missing = FALSE, null.ok = FALSE)
+  omopgenerics::assertTrue(all(c("cohort_definition_id", "subject_id", "cohort_start_date", "cohort_end_date") %in% colnames(cohort)))
+  omopgenerics::assertLogical(restrictToFirstEntry, length = 1)
+  omopgenerics::assertCharacter(estimates)
   timing <- estimates
 
-  # add cohort names
-  cdm <- omopgenerics::cdmReference(cohort)
-  name <- omopgenerics::tableName(cohort)
-
-  if (is.na(name)) {
-    cli::cli_abort("Please provide a permanent cohort table.")
+  if (length(timing) == 0) {
+    return(omopgenerics::emptySummarisedResult())
   }
 
-  ids <- cdm[[name]] |>
-    omopgenerics::settings() |>
-    dplyr::pull(.data$cohort_definition_id)
-
-  if (is.null(cohortId)) {
-    cohortId <- ids
-  } else {
-    indNot <- which(!cohortId %in% ids)
-    if (length(indNot) > 0) {
-      cli::cli_warn("{paste0(cohortId[indNot], collapse = ', ')} {?is/are} not in the cohort table.")
-    }
-  }
-  cdm[[name]] <- PatientProfiles::addCohortName(cdm[[name]]) |>
-    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId)
+  cohort <- cohort |>
+    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
+    PatientProfiles::addCohortName()
 
   if (isTRUE(restrictToFirstEntry)) {
-    # to use cohortConstructor once released
-    # cdm[[name]] <- cdm[[name]] |>
-    #   restrictToFirstEntry()
-    cdm[[name]] <- cdm[[name]] |>
+    cohort <- cohort |>
       dplyr::group_by(.data$subject_id, .data$cohort_definition_id) |>
       dplyr::filter(.data$cohort_start_date == min(.data$cohort_start_date, na.rm = TRUE)) |>
       dplyr::ungroup()
   }
 
-  strataCols <- unlist(strata)
+  strataCols <- unlist(strata) |> unique()
   # should we use addCohortIntersectDate instead to avoid potentially large number of rows?
-  cohort_timings <- cdm[[name]] |>
+  cohort_timings <- cohort |>
     dplyr::rename("cohort_name_reference" = "cohort_name") |>
     dplyr::select(dplyr::all_of(c(
       strataCols, "cohort_name_reference",
@@ -99,7 +92,7 @@ summariseCohortTiming <- function(cohort,
       "subject_id"
     ))) |>
     dplyr::inner_join(
-      cdm[[name]] |>
+      cohort |>
         dplyr::rename_with(~ paste0(.x, "_comparator"),
           .cols = c(
             "cohort_definition_id", "cohort_start_date",
@@ -111,120 +104,128 @@ summariseCohortTiming <- function(cohort,
           "cohort_start_date_comparator", "cohort_end_date_comparator",
           "subject_id"
         ))),
-      by = c("subject_id", unique(strataCols))
+      by = c("subject_id", strataCols)
     ) |>
     dplyr::filter(.data$cohort_name_reference != .data$cohort_name_comparator) %>% # to be removed
-    dplyr::mutate(days_between_cohort_entries = !!CDMConnector::datediff("cohort_start_date",
+    dplyr::mutate(days_between_cohort_entries = as.integer(!!CDMConnector::datediff(
+      "cohort_start_date",
       "cohort_start_date_comparator",
       interval = "day"
+    ))) |>
+    dplyr::select(!c(
+      "cohort_start_date", "cohort_end_date", "cohort_start_date_comparator",
+      "cohort_end_date_comparator"
     )) |>
     dplyr::collect()
 
-  if (nrow(cohort_timings) == 0 || (length(timing) == 0 && !density)) {
+  if (nrow(cohort_timings) == 0) {
     return(omopgenerics::emptySummarisedResult())
   }
 
-  timingsResult <- list()
-  rId <- integer()
-  rT <- character()
+  result <- cohort_timings |>
+    PatientProfiles::summariseResult(
+      group = c("cohort_name_reference", "cohort_name_comparator"),
+      includeOverallGroup = FALSE,
+      strata = strata,
+      includeOverallStrata = TRUE,
+      variables = "days_between_cohort_entries",
+      estimates = timing
+    ) |>
+    dplyr::mutate("cdm_name" = omopgenerics::cdmName(cohort))
 
-  if (length(timing) > 0) {
-    timingsResult$estimates <- cohort_timings |>
-      PatientProfiles::summariseResult(
-        group = c("cohort_name_reference", "cohort_name_comparator"),
-        includeOverallGroup = FALSE,
-        strata = strata,
-        includeOverallStrata = TRUE,
-        variables = "days_between_cohort_entries",
-        estimates = timing
-      ) |>
-      dplyr::mutate(cdm_name = CDMConnector::cdmName(cdm))
-    rId <- c(rId, 1L)
-    rT <- c(rT, "cohort_timing")
+  # get all combinations
+  group <- settings(cohort) |>
+    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
+    dplyr::pull("cohort_name") |>
+    getCohortComp()
+  strata <- getStratas(cohort, strata)
+  if ("density" %in% estimates) {
+    estimates <- c(estimates[estimates != "density"], "density_x", "density_y")
   }
-
-  if (density) {
-    forDensity <- cohort_timings |>
-      visOmopResults::uniteGroup(cols = c("cohort_name_reference", "cohort_name_comparator"))
-    forDensity <- lapply(c(list(character(0)), strata), function(levels, data = forDensity) {
-      data |> visOmopResults::uniteStrata(cols = levels)
-    }) |>
-      dplyr::bind_rows() |>
-      dplyr::select(!dplyr::all_of(c(strataCols)))
-
-    groups <- unique(forDensity$group_level)
-    timingDensity <- NULL
-    for (gLevel in groups) {
-      # filter group comparison
-      gData <- forDensity |> dplyr::filter(.data$group_level == .env$gLevel)
-      strataNames <- unique(gData$strata_name)
-      for (sName in strataNames) {
-        # filter strata name
-        sNameData <- gData |> dplyr::filter(.data$strata_name == .env$sName)
-        strataLevels <- unique(sNameData$strata_level)
-        # compute density for each strata level
-        for (sLevel in strataLevels) {
-          sLevelData <- sNameData |> dplyr::filter(.data$strata_level == .env$sLevel)
-          if (nrow(sLevelData) > 2) {
-            timingDensity <- timingDensity |>
-              dplyr::union_all(
-                getDensityData(sLevel, sLevelData) |>
-                  dplyr::mutate(
-                    group_level = gLevel,
-                    strata_name = sName
-                  )
-              )
-          }
-        }
-      }
-    }
-
-    timingsResult$density <- timingDensity |>
-      dplyr::bind_rows() |>
-      dplyr::mutate(
-        result_id = as.integer(2),
-        cdm_name = CDMConnector::cdmName(cdm),
-        group_name = "cohort_name_reference &&& cohort_name_comparator",
-        variable_name = "density",
-        estimate_type = "numeric",
-        additional_name = "overall",
-        additional_level = "overall"
+  combinations <- getCombinations(
+    group,
+    strata,
+    dplyr::tibble(
+      variable_name = c("number records", "number subjects"),
+      estimate_name = "count"
+    ) |>
+      dplyr::union_all(dplyr::tibble(
+        variable_name = "days_between_cohort_entries",
+        estimate_name = estimates
+      ))
+  ) |>
+    dplyr::mutate(order_id = dplyr::row_number())
+  result <- result |>
+    dplyr::left_join(
+      combinations,
+      by = c(
+        "group_name", "group_level", "strata_name", "strata_level",
+        "variable_name", "estimate_name"
       )
-    rId <- c(rId, 2L)
-    rT <- c(rT, "cohort_timing_density")
-  }
+    ) |>
+    dplyr::arrange(.data$order_id, .data$variable_level) |>
+    dplyr::select(!"order_id")
 
-  timingsResult <- timingsResult |>
-    dplyr::bind_rows() |>
+  result <- result |>
     omopgenerics::newSummarisedResult(settings = dplyr::tibble(
-      "result_id" = rId,
+      "result_id" = 1L,
       "package_name" = "CohortCharacteristics",
       "package_version" = as.character(utils::packageVersion("CohortCharacteristics")),
-      "result_type" = rT,
+      "result_type" = "summarise_cohort_timing",
       "restrict_to_first_entry" = restrictToFirstEntry
     ))
 
-  return(timingsResult)
+  return(result)
 }
 
-
-getDensityData <- function(sLevel, data) {
-  dStrata <- data$days_between_cohort_entries[data$strata_level == sLevel]
-  d <- stats::density(dStrata)
-  densityResult <- dplyr::tibble(
-    variable_level = as.character(1:length(d$x)),
-    estimate_name = "x",
-    estimate_value = as.character(d$x)
+getCohortComp <- function(cohortNames) {
+  tidyr::expand_grid(
+    cohort_name_reference = cohortNames, cohort_name_comparator = cohortNames
   ) |>
-    dplyr::union_all(
-      dplyr::tibble(
-        variable_level = as.character(1:length(d$x)),
-        estimate_name = "y",
-        estimate_value = as.character(d$y)
-      )
-    ) |>
-    dplyr::mutate(
-      strata_level = sLevel
+    dplyr::filter(.data$cohort_name_reference != .data$cohort_name_comparator) |>
+    visOmopResults::uniteGroup(
+      cols = c("cohort_name_reference", "cohort_name_comparator")
     )
-  return(densityResult)
+}
+getStratas <- function(data, strata) {
+  res <- purrr::map(strata, \(x) {
+    data |>
+      dplyr::select(dplyr::all_of(x)) |>
+      dplyr::distinct() |>
+      dplyr::collect() |>
+      dplyr::arrange(dplyr::across(dplyr::everything())) |>
+      visOmopResults::uniteStrata(cols = x)
+  }) |>
+    dplyr::bind_rows()
+  dplyr::tibble(strata_name = "overall", strata_level = "overall") |>
+    dplyr::bind_rows(res)
+}
+getCombinations <- function(...) {
+  x <- list(...)
+  opts <- list()
+  ids <- omopgenerics::uniqueId(length(x), nChar = 1)
+  for (k in seq_along(x)) {
+    x[[k]] <- x[[k]] |>
+      dplyr::mutate(!!ids[k] := dplyr::row_number())
+    opts[[ids[k]]] <- x[[k]][[ids[k]]]
+  }
+
+  combinations <- do.call(tidyr::expand_grid, opts)
+
+  for (k in seq_along(x)) {
+    combinations <- combinations |>
+      dplyr::left_join(x[[k]], by = ids[k]) |>
+      dplyr::select(!dplyr::all_of(ids[k]))
+  }
+
+  return(combinations)
+}
+sortWindow <- function(window) {
+  window |>
+    purrr::imap(\(x, idx) dplyr::tibble(
+      window_name = idx, first = x[1], second = x[2]
+    )) |>
+    dplyr::bind_rows() |>
+    dplyr::arrange(.data$first, .data$second) |>
+    dplyr::pull("window_name")
 }

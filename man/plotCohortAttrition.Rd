@@ -4,24 +4,25 @@
 \alias{plotCohortAttrition}
 \title{create a ggplot from the output of summariseLargeScaleCharacteristics.}
 \usage{
-plotCohortAttrition(x, cohortId = NULL)
+plotCohortAttrition(result, cohortId = lifecycle::deprecated())
 }
 \arguments{
-\item{x}{attrition table}
+\item{result}{A summarised_result object. Output of
+summariseCohortAttrition().}
 
-\item{cohortId}{target cohort_definition_id}
+\item{cohortId}{deprecated.}
 }
 \value{
-A dgr_graph
+A \code{grViz} visualisation.
 }
 \description{
-`r lifecycle::badge("experimental")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \donttest{
+library(CohortCharacteristics)
 library(omopgenerics)
-library(dplyr)
-library(DiagrammeR)
+library(dplyr, warn.conflicts = FALSE)
 
 cdm <- mockCohortCharacteristics(numberIndividuals = 1000)
 
@@ -32,9 +33,13 @@ cdm[["cohort1"]] <- cdm[["cohort1"]] |>
   recordCohortAttrition("Restrict to cohort_end_date < 2020") |>
   compute(temporary = FALSE, name = "cohort1")
 
-cdm$cohort1 |>
-  summariseCohortAttrition() |>
+result <- summariseCohortAttrition(cdm$cohort1)
+
+result |>
+  filter(group_level == "cohort_2") |>
   plotCohortAttrition(cohortId = 2)
+
+mockDisconnect(cdm)
 }
 
 }

@@ -5,44 +5,63 @@
 \title{create a ggplot from the output of summariseLargeScaleCharacteristics.}
 \usage{
 plotComparedLargeScaleCharacteristics(
-  data,
-  referenceGroupLevel = NULL,
-  referenceStrataLevel = NULL,
-  referenceVariableLevel = NULL,
-  referenceCdmName = NULL,
-  splitStrata = FALSE,
+  result,
+  reference,
+  missings = 0,
   facet = NULL,
-  colorVars = NULL,
-  missings = 0
+  colour = NULL
 )
 }
 \arguments{
-\item{data}{output of summariseLargeScaleCharacteristics().}
+\item{result}{A summarised_result object. Output of
+summariseLargeScaleCharacteristics().}
 
-\item{referenceGroupLevel}{group_level value to be used as the reference.}
+\item{reference}{A named character to set up the reference.}
 
-\item{referenceStrataLevel}{strata_level value to be used as the reference.}
+\item{missings}{Value to replace the missing value with. If NULL missing
+values will be eliminated.}
 
-\item{referenceVariableLevel}{variable_level value to be used as the reference.}
+\item{facet}{Columns to facet by. See options with \code{tidyColumns(result)}.
+Formula is also allowed to specify rows and columns.}
 
-\item{referenceCdmName}{cdm_name value to be used as the reference.}
-
-\item{splitStrata}{boolean variable (TRUE/FALSE)}
-
-\item{facet}{columns in data to facet. If the facet position wants to be specified, use the formula class for the input
-(e.g., strata + table_name ~ group_level + cdm_name). Variables before "~" will be facet by on horizontal axis, whereas those after "~" on vertical axis.
-Character format is also allowed (e.g., c("strata","table_name","group_level","cdm_name")).
-Only the following columns are allowed to be facet by: c("cdm_name", "group_level", "strata_level", "variable_level", "strata", "table_name").
-If splitStrata = TRUE, strata levels are also allowed.}
-
-\item{colorVars}{column in data to color by. Only the following columns are allowed to be used: c("cdm_name", "group_level", "strata_level", "variable_level", "strata", "table_name").
-If splitStrata = TRUE, strata levels are also allowed.}
-
-\item{missings}{value to replace the missings with.}
+\item{colour}{Columns to color by. See options with \code{tidyColumns(result)}.}
 }
 \value{
 A ggplot.
 }
 \description{
-`r lifecycle::badge("experimental")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
+\examples{
+\dontrun{
+library(CohortCharacteristics)
+library(duckdb)
+library(CDMConnector)
+library(DrugUtilisation)
+library(plotly, warn.conflicts = FALSE)
+
+con <- dbConnect(duckdb(), eunomiaDir())
+cdm <- cdmFromCon(con, cdmSchem = "main", writeSchema = "main")
+
+cdm <- generateIngredientCohortSet(
+  cdm = cdm, name = "my_cohort", ingredient = "acetaminophen"
+)
+
+resultsLsc <- cdm$my_cohort |>
+  summariseLargeScaleCharacteristics(
+    window = list(c(-365, -1), c(1, 365)),
+    eventInWindow = "condition_occurrence"
+  )
+
+resultsLsc |>
+  plotComparedLargeScaleCharacteristics(
+    reference = c(variable_level = "-365 to -1"),
+    colour = "variable_name",
+    missings = NULL
+  ) |>
+  ggplotly()
+
+cdmDisconnect(cdm)
+}
+
 }

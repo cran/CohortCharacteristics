@@ -2,45 +2,31 @@
 % Please edit documentation in R/plotCharacteristics.R
 \name{plotCharacteristics}
 \alias{plotCharacteristics}
-\title{Create a ggplot from the output of summariseCharacteristics.
-`r lifecycle::badge("experimental")`}
+\title{Create a ggplot from the output of summariseCharacteristics.}
 \usage{
-plotCharacteristics(
-  data,
-  x = "variable_name",
-  plotStyle = "barplot",
-  facet = NULL,
-  colour = NULL,
-  colourName = NULL,
-  .options = list()
-)
+plotCharacteristics(result, plotStyle = "barplot", facet = NULL, colour = NULL)
 }
 \arguments{
-\item{data}{output of summariseCharacteristics.}
+\item{result}{A summariseCharacteristics result.}
 
-\item{x}{what to plot on x axis, default as variable_name column. Has to be a column in data.}
+\item{plotStyle}{Either \code{barplot}, \code{scatterplot} or \code{boxplot}. If \code{barplot}
+or \code{scatterplot} subset to just one estimate.}
 
-\item{plotStyle}{Now allows boxplot or barplot only.}
+\item{facet}{Columns to facet by. See options with \code{tidyColumns(result)}.
+Formula is also allowed to specify rows and columns.}
 
-\item{facet}{Variables to facet by}
-
-\item{colour}{column in data to color by.}
-
-\item{colourName}{Colour legend name}
-
-\item{.options}{Additional plotting options.}
+\item{colour}{Columns to color by. See options with \code{tidyColumns(result)}.}
 }
 \value{
 A ggplot.
 }
 \description{
-Create a ggplot from the output of summariseCharacteristics.
-`r lifecycle::badge("experimental")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \donttest{
 library(CohortCharacteristics)
-library(dplyr)
+library(dplyr, warn.conflicts = FALSE)
 
 cdm <- mockCohortCharacteristics()
 
@@ -57,20 +43,29 @@ results <- summariseCharacteristics(
 
 results |>
   filter(
-    variable_name == "Cohort2 flag -365 to -1",
-    estimate_name == "percentage"
+    variable_name == "Cohort2 flag -365 to -1", estimate_name == "percentage"
   ) |>
   plotCharacteristics(
     plotStyle = "barplot",
     colour = "variable_level",
-    x = "variable_level",
-    facet = c(
-      "cdm_name",
-      "group_level",
-      "strata_level"
-    )
+    facet = c("cdm_name", "cohort_name")
   )
 
-mockDisconnect(cdm = cdm)
+results |>
+  filter(variable_name == "Age", estimate_name == "mean") |>
+  plotCharacteristics(
+    plotStyle = "scatterplot",
+    facet = "cdm_name"
+  )
+
+results |>
+  filter(variable_name == "Age") |>
+  plotCharacteristics(
+    plotStyle = "boxplot",
+    facet = "cdm_name",
+    colour = "cohort_name"
+  )
+
+mockDisconnect(cdm)
 }
 }

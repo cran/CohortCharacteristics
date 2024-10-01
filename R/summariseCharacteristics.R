@@ -62,11 +62,12 @@
 #'
 #' @examples
 #' \donttest{
-#' library(dplyr)
+#' library(dplyr, warn.conflicts = FALSE)
 #' library(CohortCharacteristics)
 #' library(PatientProfiles)
 #'
 #' cdm <- mockCohortCharacteristics()
+#'
 #' cdm$cohort1 |>
 #'   addSex() |>
 #'   addAge(
@@ -74,13 +75,13 @@
 #'   ) |>
 #'   summariseCharacteristics(
 #'     strata = list("sex", "age_group"),
-#'     cohortIntersectFlag = list (
+#'     cohortIntersectFlag = list(
 #'       "Cohort 2 Flag" = list(
 #'         targetCohortTable = "cohort2",
 #'         window = c(-365, 0)
 #'       )
 #'     ),
-#'     cohortIntersectCount = list (
+#'     cohortIntersectCount = list(
 #'       "Cohort 2 Count" = list(
 #'         targetCohortTable = "cohort2",
 #'         window = c(-365, 0)
@@ -89,7 +90,7 @@
 #'   ) |>
 #'   glimpse()
 #'
-#' mockDisconnect(cdm = cdm)
+#' mockDisconnect(cdm)
 #' }
 summariseCharacteristics <- function(cohort,
                                      cohortId = NULL,
@@ -114,14 +115,14 @@ summariseCharacteristics <- function(cohort,
   # check initial tables
   cdm <- omopgenerics::cdmReference(cohort)
   checkX(cohort)
-  checkmate::assertLogical(demographics, any.missing = FALSE, len = 1)
-  checkCdm(cdm)
+  omopgenerics::assertLogical(demographics, length = 1)
+  cdm <- omopgenerics::validateCdmArgument(cdm)
   if (!is.list(strata)) {
     strata <- list(strata)
   }
   strata <- checkStrata(strata, cohort)
-  ageGroup <- checkAgeGroup(ageGroup)
-  assertLogical(counts)
+  ageGroup <- omopgenerics::validateAgeGroupArgument(ageGroup)
+  omopgenerics::assertLogical(counts)
   tableIntersectFlag <- assertIntersect(tableIntersectFlag)
   tableIntersectCount <- assertIntersect(tableIntersectCount)
   tableIntersectDate <- assertIntersect(tableIntersectDate)
@@ -136,7 +137,7 @@ summariseCharacteristics <- function(cohort,
   conceptIntersectDays <- assertIntersect(conceptIntersectDays)
   otherVariables <- checkOtherVariables(otherVariables, cohort)
   otherVariablesEstimates <- checkOtherVariablesEstimates(otherVariablesEstimates, otherVariables)
-  assertNumeric(cohortId, integerish = TRUE, null = TRUE)
+  omopgenerics::assertNumeric(cohortId, integerish = TRUE, null = TRUE)
   ids <- omopgenerics::settings(cohort)$cohort_definition_id
   if (is.null(cohortId)) {
     cohortId <- ids
@@ -158,7 +159,8 @@ summariseCharacteristics <- function(cohort,
     "package_version" = as.character(utils::packageVersion(
       "CohortCharacteristics"
     )),
-    "result_type" = "summarised_characteristics"
+    "result_type" = "summarise_characteristics",
+    "table_name" = omopgenerics::tableName(cohort)
   )
 
   # return empty result if no analyses chosen
@@ -204,27 +206,29 @@ summariseCharacteristics <- function(cohort,
       dplyr::all_of(unique(unlist(otherVariables)))
     )
 
-  if (cohort |> dplyr::tally() |> dplyr::pull() == 0) {
+  if (omopgenerics::isTableEmpty(cohort)) {
+    cohortNames <- omopgenerics::settings(cohort)$cohort_name
     if (any(c("subject_id", "person_id") %in% colnames(cohort))) {
       variables <- c("number subjects", "number records")
     } else {
       variables <- "number records"
     }
-    result <- dplyr::tibble(
-      "result_id" = as.integer(1),
-      "cdm_name" = CDMConnector::cdmName(cdm),
-      "group_name" = "overall",
-      "group_level" = "overall",
-      "strata_name" = "overall",
-      "strata_level" = "overall",
-      "variable_name" = variables,
-      "variable_level" = as.character(NA),
-      "estimate_name" = "count",
-      "estimate_type" = "integer",
-      "estimate_value" = "0",
-      "additional_name" = "overall",
-      "additional_level" = "overall"
+    result <- tidyr::expand_grid(
+      "group_level" = cohortNames, "variable_name" = variables
     ) |>
+      dplyr::mutate(
+        "result_id" = as.integer(1),
+        "cdm_name" = CDMConnector::cdmName(cdm),
+        "group_name" = "cohort_name",
+        "strata_name" = "overall",
+        "strata_level" = "overall",
+        "variable_level" = as.character(NA),
+        "estimate_name" = "count",
+        "estimate_type" = "integer",
+        "estimate_value" = "0",
+        "additional_name" = "overall",
+        "additional_level" = "overall"
+      ) |>
       omopgenerics::newSummarisedResult(settings = srSet)
     return(result)
   }
@@ -244,12 +248,10 @@ summariseCharacteristics <- function(cohort,
     age <- uniqueVariableName()
     priorObservation <- uniqueVariableName()
     futureObservation <- uniqueVariableName()
+    duration <- uniqueVariableName()
     demographicsCategorical <- sex
 
     if (!is.null(ageGroup)) {
-      # default names
-      ageGroup <- checkAgeGroup(ageGroup)
-
       # update names
       newNames <- uniqueVariableName(length(ageGroup))
       dic <- dic |>
@@ -266,9 +268,10 @@ summariseCharacteristics <- function(cohort,
     }
     dic <- dic |>
       dplyr::union_all(dplyr::tibble(
-        short_name = c(sex, age, priorObservation, futureObservation),
+        short_name = c(sex, age, priorObservation, futureObservation, duration),
         new_variable_name = c(
-          "sex", "age", "prior_observation", "future_observation"
+          "sex", "age", "prior_observation", "future_observation",
+          "days_in_cohort"
         ),
         new_variable_level = as.character(NA),
         table = as.character(NA),
@@ -284,13 +287,16 @@ summariseCharacteristics <- function(cohort,
         ageName = age,
         priorObservationName = priorObservation,
         futureObservationName = futureObservation
-      )
+      ) %>%
+      dplyr::mutate(!!duration := as.integer(
+        !!CDMConnector::datediff("cohort_start_date", "cohort_end_date") + 1
+      ))
 
     # update summary settings
     variables <- variables |>
       updateVariables(
         date = c("cohort_start_date", "cohort_end_date"),
-        numeric = c(priorObservation, futureObservation, age),
+        numeric = c(priorObservation, futureObservation, age, duration),
         categorical = demographicsCategorical
       )
   }
@@ -395,7 +401,6 @@ summariseCharacteristics <- function(cohort,
 
   cli::cli_alert_info("summarising data")
   # summarise results
-
   suppressMessages(
     results <- cohort |>
       PatientProfiles::summariseResult(
@@ -436,6 +441,29 @@ summariseCharacteristics <- function(cohort,
     )) |>
     visOmopResults::uniteAdditional(cols = c("table", "window", "value")) |>
     dplyr::as_tibble()
+
+  # order result
+  combinations <- getCombinations(
+    dplyr::tibble(group_level = settings(cohort)$cohort_name),
+    getStratas(cohort, strata),
+    results |>
+      dplyr::select("variable_name", "variable_level") |>
+      dplyr::distinct(),
+    results |>
+      dplyr::select("estimate_name") |>
+      dplyr::distinct()
+  ) |>
+    dplyr::mutate(order_id = dplyr::row_number())
+  results <- results |>
+    dplyr::left_join(
+      combinations,
+      by = c(
+        "group_level", "strata_name", "strata_level", "variable_name",
+        "variable_level", "estimate_name"
+      )
+    ) |>
+    dplyr::arrange(.data$order_id) |>
+    dplyr::select(-"order_id")
 
   results <- results |>
     dplyr::mutate("result_id" = 1L) |>

@@ -1,26 +1,28 @@
 test_that("test summariseCharacteristics", {
   person <- dplyr::tibble(
-    person_id = c(1, 2, 3), gender_concept_id = c(8507, 8532, 8532),
-    year_of_birth = c(1985, 2000, 1962), month_of_birth = c(10, 5, 9),
-    day_of_birth = c(30, 10, 24),
-    race_concept_id = 0,
-    ethnicity_concept_id = 0
+    person_id = c(1, 2, 3) |> as.integer(),
+    gender_concept_id = c(8507, 8532, 8532) |> as.integer(),
+    year_of_birth = c(1985, 2000, 1962) |> as.integer(),
+    month_of_birth = c(10, 5, 9) |> as.integer(),
+    day_of_birth = c(30, 10, 24) |> as.integer(),
+    race_concept_id = 0L,
+    ethnicity_concept_id = 0L
   )
   dus_cohort <- dplyr::tibble(
-    cohort_definition_id = c(1, 1, 1, 2),
-    subject_id = c(1, 1, 2, 3),
+    cohort_definition_id = c(1, 1, 1, 2) |> as.integer(),
+    subject_id = c(1, 1, 2, 3) |> as.integer(),
     cohort_start_date = as.Date(c(
       "1990-04-19", "1991-04-19", "2010-11-14", "2000-05-25"
     )),
     cohort_end_date = as.Date(c(
-      "1990-04-19", "1991-04-19", "2010-11-14", "2000-05-25"
+      "1990-04-19", "1992-04-19", "2010-12-14", "2000-05-26"
     )),
     blood_type = c("a", "a", "0", "0"),
-    number_visits = c(0, 1, 5, 12)
+    number_visits = c(0, 1, 5, 12) |> as.integer()
   )
   comorbidities <- dplyr::tibble(
-    cohort_definition_id = c(1, 2, 2, 1),
-    subject_id = c(1, 1, 3, 3),
+    cohort_definition_id = c(1, 2, 2, 1) |> as.integer(),
+    subject_id = c(1, 1, 3, 3) |> as.integer(),
     cohort_start_date = as.Date(c(
       "1990-01-01", "1990-06-01", "2000-01-01", "2000-06-01"
     )),
@@ -29,8 +31,8 @@ test_that("test summariseCharacteristics", {
     ))
   )
   medication <- dplyr::tibble(
-    cohort_definition_id = c(1, 1, 2, 1),
-    subject_id = c(1, 1, 2, 3),
+    cohort_definition_id = c(1, 1, 2, 1) |> as.integer(),
+    subject_id = c(1, 1, 2, 3) |> as.integer(),
     cohort_start_date = as.Date(c(
       "1990-02-01", "1990-08-01", "2009-01-01", "1995-06-01"
     )),
@@ -39,15 +41,15 @@ test_that("test summariseCharacteristics", {
     ))
   )
   observation_period <- dplyr::tibble(
-    observation_period_id = c(1, 2, 3),
-    person_id = c(1, 2, 3),
+    observation_period_id = c(1, 2, 3) |> as.integer(),
+    person_id = c(1, 2, 3) |> as.integer(),
     observation_period_start_date = as.Date(c(
       "1985-01-01", "1989-04-29", "1974-12-03"
     )),
     observation_period_end_date = as.Date(c(
       "2011-03-04", "2022-03-14", "2023-07-10"
     )),
-    period_type_concept_id = 0
+    period_type_concept_id = 0L
   )
 
   cdm <- mockCohortCharacteristics(
@@ -59,18 +61,18 @@ test_that("test summariseCharacteristics", {
 
   cdm$dus_cohort <- omopgenerics::newCohortTable(
     table = cdm$dus_cohort, cohortSetRef = dplyr::tibble(
-      cohort_definition_id = c(1, 2), cohort_name = c("exposed", "unexposed")
+      cohort_definition_id = c(1L, 2L), cohort_name = c("exposed", "unexposed")
     )
   )
   cdm$comorbidities <- omopgenerics::newCohortTable(
     table = cdm$comorbidities, cohortSetRef = dplyr::tibble(
-      cohort_definition_id = c(1, 2), cohort_name = c("covid", "headache")
+      cohort_definition_id = c(1L, 2L), cohort_name = c("covid", "headache")
     )
   )
   cdm$medication <- omopgenerics::newCohortTable(
     table = cdm$medication,
     cohortSetRef = dplyr::tibble(
-      cohort_definition_id = c(1, 2, 3),
+      cohort_definition_id = c(1, 2, 3) |> as.integer(),
       cohort_name = c("acetaminophen", "ibuprophen", "naloxone")
     ),
     cohortAttritionRef = NULL
@@ -180,6 +182,38 @@ test_that("test summariseCharacteristics", {
     0
   )
 
+  resDays <- result |>
+    dplyr::filter(.data$variable_name == "Days in cohort")
+  expect_identical(
+    unique(resDays$estimate_value[
+      resDays$group_level == "unexposed" & resDays$estimate_name != "sd"
+    ]),
+    "2"
+  )
+  resDays <- resDays |>
+    dplyr::filter(.data$group_level == "exposed")
+  days <- c(1L, 367L, 31L)
+  expect_identical(
+    resDays$estimate_value[resDays$estimate_name == "median"],
+    as.character(median(days))
+  )
+  expect_identical(
+    resDays$estimate_value[resDays$estimate_name == "q25"],
+    as.character(quantile(days, 0.25))
+  )
+  expect_identical(
+    resDays$estimate_value[resDays$estimate_name == "q75"],
+    as.character(quantile(days, 0.75))
+  )
+  expect_identical(
+    resDays$estimate_value[resDays$estimate_name == "min"],
+    as.character(min(days))
+  )
+  expect_identical(
+    resDays$estimate_value[resDays$estimate_name == "max"],
+    as.character(max(days))
+  )
+
   expect_no_error(result <- summariseCharacteristics(
     cdm$dus_cohort,
     cohortIntersectFlag = list(
@@ -263,15 +297,15 @@ test_that("test summariseCharacteristics", {
   ))
   expect_equal(
     empty,
-    omopgenerics::emptySummarisedResult() |>
-      omopgenerics::newSummarisedResult(settings = dplyr::tibble(
-        "result_id" = 1L,
-        "package_name" = "CohortCharacteristics",
-        "package_version" = as.character(utils::packageVersion(
-          "CohortCharacteristics"
-        )),
-        "result_type" = "summarised_characteristics"
-      ))
+    omopgenerics::emptySummarisedResult(settings = dplyr::tibble(
+      "result_id" = 1L,
+      "package_name" = "CohortCharacteristics",
+      "package_version" = as.character(utils::packageVersion(
+        "CohortCharacteristics"
+      )),
+      "result_type" = "summarise_characteristics",
+      "table_name" = "dus_cohort"
+    ))
   )
 
   # demographics
@@ -434,15 +468,17 @@ test_that("test empty cohort", {
 
 test_that("test cohort id", {
   person <- dplyr::tibble(
-    person_id = c(1, 2, 3), gender_concept_id = c(8507, 8532, 8532),
-    year_of_birth = c(1985, 2000, 1962), month_of_birth = c(10, 5, 9),
-    day_of_birth = c(30, 10, 24),
-    race_concept_id = 0,
-    ethnicity_concept_id = 0
+    person_id = 1:3L,
+    gender_concept_id = c(8507, 8532, 8532) |> as.integer(),
+    year_of_birth = c(1985, 2000, 1962) |> as.integer(),
+    month_of_birth = c(10, 5, 9) |> as.integer(),
+    day_of_birth = c(30, 10, 24) |> as.integer(),
+    race_concept_id = 0L,
+    ethnicity_concept_id = 0L
   )
   dus_cohort <- dplyr::tibble(
-    cohort_definition_id = c(1, 1, 1, 2),
-    subject_id = c(1, 1, 2, 3),
+    cohort_definition_id = c(1, 1, 1, 2) |> as.integer(),
+    subject_id = c(1, 1, 2, 3) |> as.integer(),
     cohort_start_date = as.Date(c(
       "1990-04-19", "1991-04-19", "2010-11-14", "2000-05-25"
     )),
@@ -451,8 +487,8 @@ test_that("test cohort id", {
     ))
   )
   comorbidities <- dplyr::tibble(
-    cohort_definition_id = c(1, 2, 2, 1),
-    subject_id = c(1, 1, 3, 3),
+    cohort_definition_id = c(1, 2, 2, 1) |> as.integer(),
+    subject_id = c(1, 1, 3, 3) |> as.integer(),
     cohort_start_date = as.Date(c(
       "1990-01-01", "1990-06-01", "2000-01-01", "2000-06-01"
     )),
@@ -461,8 +497,8 @@ test_that("test cohort id", {
     ))
   )
   medication <- dplyr::tibble(
-    cohort_definition_id = c(1, 1, 2, 1),
-    subject_id = c(1, 1, 2, 3),
+    cohort_definition_id = c(1, 1, 2, 1) |> as.integer(),
+    subject_id = c(1, 1, 2, 3) |> as.integer(),
     cohort_start_date = as.Date(c(
       "1990-02-01", "1990-08-01", "2009-01-01", "1995-06-01"
     )),
@@ -471,15 +507,15 @@ test_that("test cohort id", {
     ))
   )
   observation_period <- dplyr::tibble(
-    observation_period_id = c(1, 2, 3),
-    person_id = c(1, 2, 3),
+    observation_period_id = c(1, 2, 3) |> as.integer(),
+    person_id = c(1, 2, 3) |> as.integer(),
     observation_period_start_date = as.Date(c(
       "1985-01-01", "1989-04-29", "1974-12-03"
     )),
     observation_period_end_date = as.Date(c(
       "2011-03-04", "2022-03-14", "2023-07-10"
     )),
-    period_type_concept_id = 0
+    period_type_concept_id = 0L
   )
 
   cdm <- mockCohortCharacteristics(
@@ -491,18 +527,20 @@ test_that("test cohort id", {
 
   cdm$dus_cohort <- omopgenerics::newCohortTable(
     table = cdm$dus_cohort, cohortSetRef = dplyr::tibble(
-      cohort_definition_id = c(1, 2), cohort_name = c("exposed", "unexposed")
+      cohort_definition_id = c(1L, 2L),
+      cohort_name = c("exposed", "unexposed")
     )
   )
   cdm$comorbidities <- omopgenerics::newCohortTable(
     table = cdm$comorbidities, cohortSetRef = dplyr::tibble(
-      cohort_definition_id = c(1, 2), cohort_name = c("covid", "headache")
+      cohort_definition_id = c(1L, 2L),
+      cohort_name = c("covid", "headache")
     )
   )
   cdm$medication <- omopgenerics::newCohortTable(
     table = cdm$medication,
     cohortSetRef = dplyr::tibble(
-      cohort_definition_id = c(1, 2, 3),
+      cohort_definition_id = c(1L, 2L, 3L),
       cohort_name = c("acetaminophen", "ibuprophen", "naloxone")
     ),
     cohortAttritionRef = NULL
@@ -575,15 +613,17 @@ test_that("test cohort id", {
 
 test_that("arguments tableIntersect", {
   person <- dplyr::tibble(
-    person_id = c(1, 2, 3, 4, 5), gender_concept_id = c(8507, 8532, 8532, 8507, 8507),
-    year_of_birth = c(1985, 2000, 1962, 1999, 1979), month_of_birth = c(10, 5, 9, 2, 4),
-    day_of_birth = c(30, 10, 24, 26, 25),
-    race_concept_id = 0,
-    ethnicity_concept_id = 0
+    person_id = 1:5L,
+    gender_concept_id = as.integer(c(8507, 8532, 8532, 8507, 8507)),
+    year_of_birth = as.integer(c(1985, 2000, 1962, 1999, 1979)),
+    month_of_birth = as.integer(c(10, 5, 9, 2, 4)),
+    day_of_birth = as.integer(c(30, 10, 24, 26, 25)),
+    race_concept_id = 0L,
+    ethnicity_concept_id = 0L
   )
   dus_cohort <- dplyr::tibble(
-    cohort_definition_id = c(1, 1, 1, 2, 2, 2),
-    subject_id = c(1, 1, 2, 3, 4, 5),
+    cohort_definition_id = as.integer(c(1, 1, 1, 2, 2, 2)),
+    subject_id = as.integer(c(1, 1, 2, 3, 4, 5)),
     cohort_start_date = as.Date(c(
       "1990-04-19", "1991-04-19", "2010-11-14", "2000-05-25", "2010-01-01", "2009-09-09"
     )),
@@ -593,26 +633,26 @@ test_that("arguments tableIntersect", {
   )
 
   observation_period <- dplyr::tibble(
-    observation_period_id = c(1, 2, 3, 4, 5),
-    person_id = c(1, 2, 3, 4, 5),
+    observation_period_id = 1:5L,
+    person_id = 1:5L,
     observation_period_start_date = as.Date(c(
       "1985-01-01", "1989-04-29", "1974-12-03", "2003-01-01", "2005-01-01"
     )),
     observation_period_end_date = as.Date(c(
       "2011-03-04", "2022-03-14", "2023-07-10", "2024-12-31", "2024-12-31"
     )),
-    period_type_concept_id = 0
+    period_type_concept_id = 0L
   )
 
   visit_occurrence <- dplyr::tibble(
-    visit_occurrence_id = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-    person_id = c(1, 1, 1, 1, 5, 2, 2, 4, 5, 4),
+    visit_occurrence_id = 1:10L,
+    person_id = as.integer(c(1, 1, 1, 1, 5, 2, 2, 4, 5, 4)),
     visit_start_date = as.Date(c(
       "2009-01-01", "2011-01-02", "1994-12-03", "2013-01-01", "2005-01-01", "2008-08-08", "2009-09-09", "2010-10-10", "2011-11-11", "2008-09-01"
     )),
-    visit_concept_id = 0,
+    visit_concept_id = 0L,
     visit_end_date = visit_start_date,
-    visit_type_concept_id = 0
+    visit_type_concept_id = 0L
   )
 
   cdm <- mockCohortCharacteristics(
@@ -624,7 +664,7 @@ test_that("arguments tableIntersect", {
 
   cdm$dus_cohort <- omopgenerics::newCohortTable(
     table = cdm$dus_cohort, cohortSetRef = dplyr::tibble(
-      cohort_definition_id = c(1, 2), cohort_name = c("exposed", "unexposed")
+      cohort_definition_id = c(1L, 2L), cohort_name = c("exposed", "unexposed")
     )
   )
 
@@ -915,8 +955,8 @@ test_that("arguments tableIntersect", {
 
 test_that("arguments cohortIntersect", {
   dus_cohort <- dplyr::tibble(
-    cohort_definition_id = c(1, 1, 1, 1, 1, 1),
-    subject_id = c(1, 1, 2, 3, 2, 3),
+    cohort_definition_id = c(1, 1, 1, 1, 1, 1) |> as.integer(),
+    subject_id = c(1, 1, 2, 3, 2, 3) |> as.integer(),
     cohort_start_date = as.Date(c(
       "1990-04-19", "1991-04-19", "2010-11-14", "2000-05-25", "2010-01-01", "2009-09-09"
     )),
@@ -926,8 +966,8 @@ test_that("arguments cohortIntersect", {
   )
 
   cohort1 <- dplyr::tibble(
-    cohort_definition_id = c(1, 1, 1, 1, 1, 1),
-    subject_id = c(3, 2, 1, 1, 2, 3),
+    cohort_definition_id = c(1, 1, 1, 1, 1, 1) |> as.integer(),
+    subject_id = c(3, 2, 1, 1, 2, 3) |> as.integer(),
     cohort_start_date = as.Date(c(
       "2001-04-20", "1992-04-19", "2009-11-14", "1999-05-26", "2009-01-01", "2010-09-10"
     )),
@@ -937,15 +977,15 @@ test_that("arguments cohortIntersect", {
   )
 
   observation_period <- dplyr::tibble(
-    observation_period_id = c(1, 2, 3, 4, 5),
-    person_id = c(1, 2, 3, 4, 5),
+    observation_period_id = c(1, 2, 3, 4, 5) |> as.integer(),
+    person_id = c(1, 2, 3, 4, 5) |> as.integer(),
     observation_period_start_date = as.Date(c(
       "1985-01-01", "1989-04-29", "1974-12-03", "1983-01-01", "1985-01-01"
     )),
     observation_period_end_date = as.Date(c(
       "2021-03-04", "2022-03-14", "2023-07-10", "2024-12-31", "2024-12-31"
     )),
-    period_type_concept_id = 0
+    period_type_concept_id = 0L
   )
 
   cdm <- mockCohortCharacteristics(
@@ -1125,7 +1165,8 @@ test_that("arguments conceptIntersect", {
 
   # create a cohort
   cdm <- CDMConnector::generateConceptCohortSet(
-    cdm = cdm, conceptSet = list("sinusitis" = c(4294548, 40481087, 257012)),
+    cdm = cdm,
+    conceptSet = list("sinusitis" = c(4294548L, 40481087L, 257012L)),
     name = "my_cohort"
   )
 
@@ -1148,7 +1189,7 @@ test_that("arguments conceptIntersect", {
   )
 
   cdm <- CDMConnector::generateConceptCohortSet(
-    cdm = cdm, conceptSet = list("sinusitis" = c(4294548, 40481087, 257012)),
+    cdm = cdm, conceptSet = list("sinusitis" = c(4294548L, 40481087L, 257012L)),
     name = "sinusitis"
   )
 
@@ -1224,18 +1265,14 @@ test_that("arguments conceptIntersect", {
   )
 
   ## intersect date
-  expect_warning(
-    expect_warning(
-      expect_no_error(
-        results <- summariseCharacteristics(
-          cohort = cdm$sinusitis,
-          conceptIntersectDate = list(
-            "Codelist date anytime before" = list(
-              conceptSet = codelist,
-              order = "last",
-              window = c(-Inf, -1)
-            )
-          )
+  expect_no_error(
+    results <- summariseCharacteristics(
+      cohort = cdm$sinusitis,
+      conceptIntersectDate = list(
+        "Codelist date anytime before" = list(
+          conceptSet = codelist,
+          order = "last",
+          window = c(-Inf, -1)
         )
       )
     )
@@ -1275,18 +1312,14 @@ test_that("arguments conceptIntersect", {
   )
 
   ## Intersect Days
-  expect_warning(
-    expect_warning(
-      expect_no_error(
-        results <- summariseCharacteristics(
-          cohort = cdm$sinusitis,
-          conceptIntersectDays = list(
-            "Codelist days anytime before" = list(
-              conceptSet = codelist,
-              order = "last",
-              window = c(-Inf, -1)
-            )
-          )
+  expect_no_error(
+    results <- summariseCharacteristics(
+      cohort = cdm$sinusitis,
+      conceptIntersectDays = list(
+        "Codelist days anytime before" = list(
+          conceptSet = codelist,
+          order = "last",
+          window = c(-Inf, -1)
         )
       )
     )
@@ -1297,36 +1330,89 @@ test_that("arguments conceptIntersect", {
       (results %>% dplyr::pull("variable_name"))
   )
 
+  expect_true(all(
+    results %>%
+      dplyr::filter(
+        variable_name == "Codelist days anytime before",
+        estimate_name == "min"
+      ) %>%
+      dplyr::select("estimate_value") %>%
+      dplyr::mutate(estimate_value = as.integer(estimate_value)) %>%
+      dplyr::pull("estimate_value") |>
+      na.omit() %>%
+      as.numeric() < 0
+  ))
 
-  expect_warning(
-    expect_true(all(
-      results %>%
-        dplyr::filter(
-          variable_name == "Codelist days anytime before",
-          estimate_name == "min"
-        ) %>%
-        dplyr::select("estimate_value") %>%
-        dplyr::mutate(estimate_value = as.integer(estimate_value)) %>%
-        dplyr::pull("estimate_value") |>
-        na.omit() %>%
-        as.numeric() < 0
-    ))
-  )
-
-  expect_warning(
-    expect_true(all(
-      results %>%
-        dplyr::filter(
-          variable_name == "Codelist days anytime before",
-          estimate_name == "max"
-        ) %>%
-        dplyr::select("estimate_value") %>%
-        dplyr::mutate(estimate_value = as.integer(estimate_value)) %>%
-        dplyr::pull("estimate_value") |>
-        na.omit() %>%
-        as.numeric() < 0
-    ))
-  )
+  expect_true(all(
+    results %>%
+      dplyr::filter(
+        variable_name == "Codelist days anytime before",
+        estimate_name == "max"
+      ) %>%
+      dplyr::select("estimate_value") %>%
+      dplyr::mutate(estimate_value = as.integer(estimate_value)) %>%
+      dplyr::pull("estimate_value") |>
+      na.omit() %>%
+      as.numeric() < 0
+  ))
 
   mockDisconnect(cdm = cdm)
+})
+
+test_that("empty input cohort contains name issue #170", {
+  cdm <- mockCohortCharacteristics(
+    con = connection(), writeSchema = writeSchema(), numberIndividuals = 10
+  )
+  cdm <- omopgenerics::emptyCohortTable(cdm = cdm, name = "cohort1")
+  cdm$cohort1 <- cdm$cohort1 |>
+    omopgenerics::newCohortTable(
+      cohortSetRef = dplyr::tibble(
+        cohort_definition_id = 1:3L, cohort_name = c("c1", "c2", "c3")
+      )
+    )
+
+  expect_no_error(res <- cdm$cohort1 |> summariseCharacteristics())
+  expect_true(nrow(res) == 6)
+  expect_true(unique(res$estimate_value) == "0")
+  attr(res, "settings") <- NULL
+  expect_equal(
+    res |>
+      dplyr::select("group_level", "variable_name") |>
+      dplyr::as_tibble(),
+    tidyr::expand_grid(
+      "group_level" = omopgenerics::settings(cdm$cohort1)$cohort_name,
+      "variable_name" = c("number subjects", "number records")
+    )
+  )
+
+  PatientProfiles::mockDisconnect(cdm = cdm)
+})
+
+test_that("output is always the same", {
+  skip_on_cran()
+  set.seed(123456)
+  cdm <- omock::mockCdmReference() |>
+    omock::mockPerson(nPerson = 100) |>
+    omock::mockObservationPeriod() |>
+    omock::mockConditionOccurrence(recordPerson = 3) |>
+    omock::mockDrugExposure(recordPerson = 4.5) |>
+    omock::mockCohort(
+      numberCohorts = 3, cohortName = c("covid", "tb", "asthma")
+    )
+
+  cdm1 <- CDMConnector::copyCdmTo(
+    con = duckdb::dbConnect(duckdb::duckdb()), cdm = cdm, schema = "main"
+  )
+
+  cdm2 <- CDMConnector::copyCdmTo(
+    con = duckdb::dbConnect(duckdb::duckdb()), cdm = cdm, schema = "main"
+  )
+
+  result1 <- summariseCharacteristics(cdm1$cohort)
+
+  result2 <- summariseCharacteristics(cdm2$cohort)
+
+  expect_identical(result1, result2)
+
+  PatientProfiles::mockDisconnect(cdm = cdm)
 })

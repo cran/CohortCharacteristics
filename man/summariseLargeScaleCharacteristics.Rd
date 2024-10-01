@@ -43,7 +43,7 @@ or a column date of x}
 \item{excludedCodes}{Codes excluded.}
 }
 \value{
-The output of this function is a `ResultSummary` containing the
+The output of this function is a \code{ResultSummary} containing the
 relevant information.
 }
 \description{
@@ -51,26 +51,27 @@ This function is used to summarise the large scale characteristics of a
 cohort table
 }
 \examples{
-\donttest{
+\dontrun{
 library(CohortCharacteristics)
-cdm <- CohortCharacteristics::mockCohortCharacteristics()
+library(duckdb)
+library(CDMConnector)
+library(DrugUtilisation)
+library(dplyr, warn.conflicts = FALSE)
 
-concept <- dplyr::tibble(
-  concept_id = c(1125315, 1503328, 1516978, 317009, 378253, 4266367),
-  domain_id = NA_character_,
-  vocabulary_id = NA_character_,
-  concept_class_id = NA_character_,
-  concept_code = NA_character_,
-  valid_start_date = as.Date("1900-01-01"),
-  valid_end_date = as.Date("2099-01-01")
-) |>
-  dplyr::mutate(concept_name = paste0("concept: ", .data$concept_id))
-cdm <- CDMConnector::insertTable(cdm, "concept", concept)
-results <- cdm$cohort2 |>
+con <- dbConnect(duckdb(), eunomiaDir())
+cdm <- cdmFromCon(con, cdmSchem = "main", writeSchema = "main")
+
+cdm <- generateIngredientCohortSet(
+  cdm = cdm, name = "my_cohort", ingredient = "acetaminophen"
+)
+
+cdm$my_cohort |>
   summariseLargeScaleCharacteristics(
-    episodeInWindow = c("condition_occurrence"),
-    minimumFrequency = 0
-  )
-mockDisconnect(cdm = cdm)
+    window = list(c(-365, -1), c(1, 365)),
+    eventInWindow = "condition_occurrence"
+  ) |>
+  glimpse()
+
+cdmDisconnect(cdm)
 }
 }

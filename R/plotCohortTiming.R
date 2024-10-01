@@ -18,124 +18,105 @@
 #'
 #' `r lifecycle::badge("experimental")`
 #'
-#' @param result A summariseCohortTiming result.
+#' @param result A summarised_result object. Output of summariseCohortTiming().
 #' @param plotType Type of desired formatted table, possibilities are "boxplot" and
 #' "density".
 #' @param timeScale Time scale to plot results. Can be days or years.
-#' @param facet variables to facet by
-#' @param colour Variables to use for colours
-#' @param colourName Colour legend name
-#' @param uniqueCombinations If TRUE, only unique combinations of reference and
-#' comparator plots will be plotted.
-#' @param .options Additional plotting options
+#' @param uniqueCombinations Whether to restrict to unique reference and
+#' comparator comparisons.
+#' @param facet Columns to facet by. See options with `tidyColumns(result)`.
+#' Formula is also allowed to specify rows and columns.
+#' @param colour Columns to color by. See options with `tidyColumns(result)`.
 #'
 #' @return A ggplot.
 #' @export
 #'
+#' @examples
+#' \dontrun{
+#' library(CohortCharacteristics)
+#' library(duckdb)
+#' library(CDMConnector)
+#' library(DrugUtilisation)
+#'
+#' con <- dbConnect(duckdb(), eunomiaDir())
+#' cdm <- cdmFromCon(con, cdmSchem = "main", writeSchema = "main")
+#'
+#' cdm <- generateIngredientCohortSet(
+#'   cdm = cdm,
+#'   name = "my_cohort",
+#'   ingredient = c("acetaminophen", "morphine", "warfarin")
+#' )
+#'
+#' timings <- summariseCohortTiming(cdm$my_cohort)
+#'
+#' plotCohortTiming(
+#'   timings,
+#'   timeScale = "years",
+#'   facet = c("cdm_name", "cohort_name_reference"),
+#'   colour = c("cohort_name_comparator")
+#' )
+#'
+#' cdmDisconnect(cdm)
+#' }
+#'
 plotCohortTiming <- function(result,
                              plotType = "boxplot",
                              timeScale = "days",
-                             facet = NULL,
-                             colour = NULL,
-                             colourName = NULL,
                              uniqueCombinations = TRUE,
-                             .options = list()) {
+                             facet = c("cdm_name", "cohort_name_reference"),
+                             colour = c("cohort_name_comparator")) {
+  result <- omopgenerics::validateResultArgument(result) |>
+    visOmopResults::filterSettings(
+      .data$result_type == "summarise_cohort_timing"
+    )
 
-  rlang::check_installed("ggplot2")
-  rlang::check_installed("ggpubr")
-  rlang::check_installed("scales")
-  
-  if (!inherits(result, "summarised_result")) {
-    cli::cli_abort("x must be a summarised result")
-  }
   if (nrow(result) == 0) {
     cli::cli_warn("Empty result object")
     return(emptyPlot())
   }
 
   # initial checks
-  result <- omopgenerics::newSummarisedResult(result)
-  checkmate::assertChoice(plotType, c("boxplot", "density"))
-  checkmate::assertChoice(timeScale, c("days", "years"))
-  checkmate::assertCharacter(facet, null.ok = TRUE)
-  checkmate::assertCharacter(colour, null.ok = TRUE)
-  checkmate::assertCharacter(colourName, null.ok = TRUE, len = 1)
-  checkmate::assertLogical(uniqueCombinations)
+  omopgenerics::assertChoice(plotType, c("boxplot", "density"))
+  omopgenerics::assertChoice(timeScale, c("days", "years"))
+  omopgenerics::assertLogical(uniqueCombinations)
+
   if (plotType == "boxplot") {
     result <- result |>
-      visOmopResults::filterSettings(.data$result_type == "cohort_timing")
+      dplyr::filter(
+        .data$variable_name == "days_between_cohort_entries",
+        !.data$estimate_name %in% c("density_x", "density_y")
+      )
+    if (timeScale == "years") {
+      result <- changeDaysToYears(result)
+    }
   } else if (plotType == "density") {
     result <- result |>
-      visOmopResults::filterSettings(.data$result_type == "cohort_timing_density")
+      dplyr::filter(
+        .data$variable_name == "days_between_cohort_entries",
+        .data$estimate_name %in% c("density_x", "density_y")
+      )
+    if (timeScale == "years") {
+      result <- result |>
+        changeDaysToYears("density_x", 1 / 365.25) |>
+        changeDaysToYears("density_y", 365.25)
+    }
   }
+
+  xLab <- switch(timeScale,
+    "days" = "Days between cohort entries",
+    "years" = "Years between cohort entries",
+  )
 
   if (nrow(result) == 0) {
     cli::cli_warn("No timing results found")
     return(emptyPlot())
-    }
-
-  colorVars <- colour
-  facetVarX <- NULL
-  facetVarY <- NULL
-
-  if (is.null(.options[["facetNcols"]])) {
-    .options[["facetNcols"]] <- 1
-  }
-  if (is.null(.options[["facetScales"]])) {
-    .options[["facetScales"]] <- "free_y"
   }
 
-  # split table
-  timingLabel <- "{cohort_name_reference} &&& {cohort_name_comparator}"
-  x <- result |>
-    visOmopResults::tidy(splitStrata = FALSE) |>
-    dplyr::mutate(group_level = glue::glue(.env$timingLabel))
-
-
-
-  if (uniqueCombinations) {
-    x <- x |>
-      getUniqueCombinations(order = sort(unique(x$cohort_name_reference)))
-  }
-
-  suppressMessages(data_to_plot <- result |>
-    dplyr::inner_join(x) |>
-    dplyr::select(names(result)))
-
-
-
-  # Plotting
-  data_to_plot <- data_to_plot |>
-    dplyr::filter(.data$estimate_type == "numeric") |>
-    dplyr::mutate(estimate_value = as.numeric(.data$estimate_value)) |>
-    dplyr::mutate(group_level = stringr::str_replace_all(.data$group_level,
-      pattern = "&&&",
-      replacement = "to"
-    ))
-
-  if (timeScale == "years") {
-    data_to_plot <- data_to_plot |>
-      dplyr::mutate(estimate_value = .data$estimate_value / 365.25)
-    if (plotType == "boxplot") {
-      data_to_plot <- data_to_plot |>
-        dplyr::mutate(variable_name = "years_between_cohort_entries")
-    }
-    xLab <- "Years between cohort entries"
-  } else {
-    xLab <- "Days between cohort entries"
-  }
+  if (uniqueCombinations) result <- getUniqueCombinationsSr(result)
 
   if (plotType == "boxplot") {
-    gg <- plotfunction(data_to_plot,
-      xAxis = "estimate_value",
-      yAxis = "group_level",
-      facetVarX = facetVarX,
-      facetVarY = facetVarY,
-      colorVars = colorVars,
-      plotStyle = "boxplot",
-      facet = facet,
-      .options = .options
-    ) +
+    p <- visOmopResults::boxPlot(result, facet = facet, colour = colour) +
+      ggplot2::coord_flip() +
       ggplot2::theme_bw() +
       ggplot2::labs(
         title = ggplot2::element_blank(),
@@ -143,20 +124,12 @@ plotCohortTiming <- function(result,
         y = xLab
       )
   } else if (plotType == "density") {
-    data_to_plot <- data_to_plot |>
-      dplyr::filter(.data$variable_name == "density")
-    facet <- unique(c("group_level", facet))
-    gg <- plotfunction(data_to_plot,
-      xAxis = "estimate_value",
-      yAxis = "group_level",
-      facetVarX = facetVarX,
-      facetVarY = facetVarY,
-      colorVars = colorVars,
-      vertical_x = TRUE,
-      plotStyle = "density",
-      facet = facet,
-      .options = .options
-    ) +
+    # plot scatter needs to allow x to be an estimate
+    p <- result |>
+      visOmopResults::scatterPlot(
+        x = "density_x", y = "density_y", ymin = NULL, ymax = NULL, line = TRUE, point = FALSE,
+        ribbon = FALSE, facet = facet, colour = colour, group = colour
+      ) +
       ggplot2::theme_bw() +
       ggplot2::labs(
         title = ggplot2::element_blank(),
@@ -165,13 +138,14 @@ plotCohortTiming <- function(result,
       )
   }
 
-  if (!is.null(colourName)) {
-    gg <- gg +
-      ggplot2::labs(color = colourName)
-  } else {
-    gg <- gg +
-      ggplot2::labs(color = "")
-  }
+  p <- addLine(p)
 
-  return(gg)
+  return(p)
+}
+
+addLine <- function(p) {
+  p +
+    ggplot2::geom_vline(
+      xintercept = 0, colour = "black", linetype = "longdash", alpha = 0.5
+    )
 }

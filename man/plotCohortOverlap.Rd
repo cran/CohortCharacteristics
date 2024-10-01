@@ -6,33 +6,46 @@
 \usage{
 plotCohortOverlap(
   result,
-  facet = NULL,
   uniqueCombinations = TRUE,
-  .options = list()
+  y = NULL,
+  facet = c("cdm_name", "cohort_name_reference"),
+  colour = "variable_level",
+  .options = lifecycle::deprecated()
 )
 }
 \arguments{
-\item{result}{A summariseCohortOverlap result.}
+\item{result}{A summarised_result object. Output of summariseCohortOverlap().}
 
-\item{facet}{Variables to facet by.}
+\item{uniqueCombinations}{Whether to restrict to unique reference and
+comparator comparisons.}
 
-\item{uniqueCombinations}{If TRUE, only unique combinations of reference and
-comparator plots will be plotted.}
+\item{y}{Variables to use in y axis, if NULL all variables not present in
+facet are used.}
 
-\item{.options}{Additional plotting options}
+\item{facet}{Columns to facet by. See options with \code{tidyColumns(result)}.
+Formula is also allowed to specify rows and columns.}
+
+\item{colour}{Columns to color by. See options with \code{tidyColumns(result)}.}
+
+\item{.options}{deprecated.}
 }
 \value{
 A ggplot.
 }
 \description{
-`r lifecycle::badge("experimental")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \donttest{
 library(CohortCharacteristics)
-cdm <- CohortCharacteristics::mockCohortCharacteristics()
+
+cdm <- mockCohortCharacteristics()
+
 overlap <- summariseCohortOverlap(cdm$cohort2)
+
 plotCohortOverlap(overlap)
+
+mockDisconnect(cdm)
 }
 
 }

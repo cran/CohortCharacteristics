@@ -96,11 +96,12 @@ Summarise characteristics of cohorts in a cohort table
 }
 \examples{
 \donttest{
-library(dplyr)
+library(dplyr, warn.conflicts = FALSE)
 library(CohortCharacteristics)
 library(PatientProfiles)
 
 cdm <- mockCohortCharacteristics()
+
 cdm$cohort1 |>
   addSex() |>
   addAge(
@@ -108,13 +109,13 @@ cdm$cohort1 |>
   ) |>
   summariseCharacteristics(
     strata = list("sex", "age_group"),
-    cohortIntersectFlag = list (
+    cohortIntersectFlag = list(
       "Cohort 2 Flag" = list(
         targetCohortTable = "cohort2",
         window = c(-365, 0)
       )
     ),
-    cohortIntersectCount = list (
+    cohortIntersectCount = list(
       "Cohort 2 Count" = list(
         targetCohortTable = "cohort2",
         window = c(-365, 0)
@@ -123,6 +124,6 @@ cdm$cohort1 |>
   ) |>
   glimpse()
 
-mockDisconnect(cdm = cdm)
+mockDisconnect(cdm)
 }
 }

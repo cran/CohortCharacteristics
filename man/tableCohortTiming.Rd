@@ -7,45 +7,65 @@
 tableCohortTiming(
   result,
   timeScale = "days",
+  uniqueCombinations = TRUE,
   type = "gt",
-  formatEstimateName = c(N = "<count>", `Median [Q25 - Q75]` =
-    "<median> [<q25> - <q75>]", Range = "<min> - <max>"),
-  header = c("strata"),
-  split = c("group", "strata", "additional"),
+  header = visOmopResults::strataColumns(result),
   groupColumn = NULL,
-  excludeColumns = c("result_id", "estimate_type", "variable_level"),
-  .options = list()
+  hide = "variable_level"
 )
 }
 \arguments{
-\item{result}{A summariseCohortTiming result}
+\item{result}{A summarised_result object. Output of summariseCohortTiming().}
 
 \item{timeScale}{Time scale to plot results. Can be days or years.}
 
-\item{type}{Type of desired formatted table, possibilities: "gt",
-"flextable", "tibble".}
+\item{uniqueCombinations}{Whether to restrict to unique reference and
+comparator comparisons.}
 
-\item{formatEstimateName}{Named list of estimate name's to join, sorted by
-computation order. Indicate estimate_name's between <...>.}
+\item{type}{Type of table. Check supported types with
+\code{visOmopResults::tableType()}.}
 
-\item{header}{A vector containing which elements should go into the header
-in order. Allowed are: `cdm_name`, `group`, `strata`, `additional`,
-`variable`, `estimate`, `settings`.}
+\item{header}{Columns to use as header. See options with
+\code{tidyColumns(result)}.}
 
-\item{split}{A vector containing the name-level groups to split ("group",
-"strata", "additional"), or an empty character vector to not split.}
+\item{groupColumn}{Columns to group by. See options with
+\code{tidyColumns(result)}.}
 
-\item{groupColumn}{Column to use as group labels.}
-
-\item{excludeColumns}{Columns to drop from the output table.}
-
-\item{.options}{named list with additional formatting options.
-CohortCharacteristics::optionsTableCohortTiming() shows allowed arguments and
-their default values.}
+\item{hide}{Columns to hide from the visualisation. See options with
+\code{tidyColumns(result)}.}
 }
 \value{
 A formatted table of the summariseCohortTiming result.
 }
 \description{
-`r lifecycle::badge("experimental")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
+\examples{
+\dontrun{
+library(CohortCharacteristics)
+library(duckdb)
+library(CDMConnector)
+library(DrugUtilisation)
+
+con <- dbConnect(duckdb(), eunomiaDir())
+cdm <- cdmFromCon(con, cdmSchem = "main", writeSchema = "main")
+
+cdm <- generateIngredientCohortSet(
+  cdm = cdm,
+  name = "my_cohort",
+  ingredient = c("acetaminophen", "morphine", "warfarin")
+)
+
+timings <- summariseCohortTiming(cdm$my_cohort)
+
+plotCohortTiming(
+  timings,
+  timeScale = "years",
+  facet = c("cdm_name", "cohort_name_reference"),
+  colour = c("cohort_name_comparator")
+)
+
+cdmDisconnect(cdm)
+}
+
 }

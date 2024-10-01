@@ -36,27 +36,28 @@
 #' @export
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(CohortCharacteristics)
-#' cdm <- CohortCharacteristics::mockCohortCharacteristics()
+#' library(duckdb)
+#' library(CDMConnector)
+#' library(DrugUtilisation)
+#' library(dplyr, warn.conflicts = FALSE)
 #'
-#' concept <- dplyr::tibble(
-#'   concept_id = c(1125315, 1503328, 1516978, 317009, 378253, 4266367),
-#'   domain_id = NA_character_,
-#'   vocabulary_id = NA_character_,
-#'   concept_class_id = NA_character_,
-#'   concept_code = NA_character_,
-#'   valid_start_date = as.Date("1900-01-01"),
-#'   valid_end_date = as.Date("2099-01-01")
-#' ) |>
-#'   dplyr::mutate(concept_name = paste0("concept: ", .data$concept_id))
-#' cdm <- CDMConnector::insertTable(cdm, "concept", concept)
-#' results <- cdm$cohort2 |>
+#' con <- dbConnect(duckdb(), eunomiaDir())
+#' cdm <- cdmFromCon(con, cdmSchem = "main", writeSchema = "main")
+#'
+#' cdm <- generateIngredientCohortSet(
+#'   cdm = cdm, name = "my_cohort", ingredient = "acetaminophen"
+#' )
+#'
+#' cdm$my_cohort |>
 #'   summariseLargeScaleCharacteristics(
-#'     episodeInWindow = c("condition_occurrence"),
-#'     minimumFrequency = 0
-#'   )
-#' mockDisconnect(cdm = cdm)
+#'     window = list(c(-365, -1), c(1, 365)),
+#'     eventInWindow = "condition_occurrence"
+#'   ) |>
+#'   glimpse()
+#'
+#' cdmDisconnect(cdm)
 #' }
 summariseLargeScaleCharacteristics <- function(cohort,
                                                strata = list(),
@@ -72,31 +73,28 @@ summariseLargeScaleCharacteristics <- function(cohort,
                                                includeSource = FALSE,
                                                minimumFrequency = 0.005,
                                                excludedCodes = c(0)) {
-  if (!is.list(window)) {
-    window <- list(window)
-  }
   cdm <- omopgenerics::cdmReference(cohort)
 
   # initial checks
   checkX(cohort)
   checkStrata(strata, cohort)
-  checkWindow(window)
+  window <- omopgenerics::validateWindowArgument(window, snakeCase = FALSE)
   tables <- c(
     "visit_occurrence", "condition_occurrence", "drug_exposure",
     "procedure_occurrence", "device_exposure", "measurement", "observation",
     "drug_era", "condition_era", "specimen",
     paste("ATC", c("1st", "2nd", "3rd", "4th", "5th"))
   )
-  checkmate::assertSubset(eventInWindow, tables)
-  checkmate::assertSubset(episodeInWindow, tables)
+  omopgenerics::assertChoice(eventInWindow, tables, null = TRUE)
+  omopgenerics::assertChoice(episodeInWindow, tables, null = TRUE)
   if (is.null(eventInWindow) && is.null(episodeInWindow)) {
     cli::cli_abort("'eventInWindow' or 'episodeInWindow' must be provided")
   }
-  checkmate::assertLogical(includeSource, any.missing = FALSE, len = 1)
-  checkmate::assertNumber(minimumFrequency, lower = 0, upper = 1)
-  checkmate::assert_integerish(excludedCodes, any.missing = FALSE, null.ok = TRUE)
+  omopgenerics::assertLogical(includeSource, length = 1)
+  omopgenerics::assertNumeric(minimumFrequency, min = 0, max = 1)
+  omopgenerics::assertNumeric(excludedCodes, integerish = TRUE, null = TRUE)
 
-  checkCdm(cdm, "concept")
+  cdm <- omopgenerics::validateCdmArgument(cdm)
 
   # warn if strata has missing values
   for (k in seq_along(strata)) {
@@ -110,9 +108,6 @@ summariseLargeScaleCharacteristics <- function(cohort,
                     calculating stratified results")
     }
   }
-
-  # add names to windows
-  names(window) <- gsub("_", " ", gsub("m", "-", getWindowNames(window)))
 
   # random tablePrefix
   tablePrefix <- omopgenerics::tmpPrefix()
@@ -211,11 +206,34 @@ summariseLargeScaleCharacteristics <- function(cohort,
 
   results <- results |>
     dplyr::left_join(sets, by = c("table_name", "type", "analysis")) |>
-    dplyr::select(-"table_name", -"type", -"analysis") |>
+    dplyr::select(-"table_name", -"type", -"analysis")
+
+  # order final result
+  group <- dplyr::tibble(
+    group_level = omopgenerics::settings(cohort)$cohort_name
+  )
+  strata <- getStratas(cohort, strata)
+  variableLevel <- dplyr::tibble(variable_level = sortWindow(window))
+  combs <- getCombinations(group, strata, variableLevel) |>
+    dplyr::mutate(order_id = dplyr::row_number())
+  results <- results |>
+    dplyr::left_join(
+      combs,
+      by = c("group_level", "strata_name", "strata_level", "variable_level"),
+      relationship = "many-to-many"
+    ) |>
+    dplyr::mutate(order_id2 = as.numeric(.data$additional_level)) |>
+    dplyr::arrange(
+      .data$result_id, .data$order_id, .data$order_id2, .data$estimate_name
+    ) |>
+    dplyr::select(!c("order_id", "order_id2"))
+  # TO consider -> order by prevalence/percentage
+
+  results <- results |>
     omopgenerics::newSummarisedResult(
       settings = sets |>
         dplyr::mutate(
-          "result_type" = "summarised_large_scale_characteristics",
+          "result_type" = "summarise_large_scale_characteristics",
           "package_name" = "CohortCharacteristics",
           "package_version" = as.character(utils::packageVersion("CohortCharacteristics"))
         )
@@ -433,20 +451,16 @@ formatLscResult <- function(lsc, den, cdm, minimumFrequency) {
       )
     )
 
-  start_rows <- lsc |>
-    dplyr::tally() |>
-    dplyr::pull("n")
+  start_rows <- nrow(lsc)
   lsc <- lsc |>
     dplyr::mutate(percentage = round(100 * .data$count / .data$denominator, 2)) |>
     dplyr::select(-"denominator") |>
     dplyr::filter(.data$percentage >= 100 * .env$minimumFrequency)
-  end_rows <- lsc |>
-    dplyr::tally() |>
-    dplyr::pull("n")
+  end_rows <- nrow(lsc)
 
   if (end_rows < start_rows) {
-    cli::cli_inform("{start_rows - end_rows} estimate{?s} dropped as
-                  frequency less than {paste0(minimumFrequency*100)}%")
+    "{start_rows - end_rows} estimate{?s} dropped as frequency less than {paste0(minimumFrequency*100)}%" |>
+      cli::cli_inform()
   }
 
   lsc <- lsc |>

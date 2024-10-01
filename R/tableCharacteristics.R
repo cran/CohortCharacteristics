@@ -14,25 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#' Format a summarised_characteristics object into a visual table.
+#' Format a summarise_characteristics object into a visual table.
 #'
 #' `r lifecycle::badge("experimental")`
 #'
-#' @param result A summarised_characteristics object.
-#' @param type Type of desired formatted table, possibilities: "gt",
-#' "flextable", "tibble".
-#' @param formatEstimateName Named list of estimate name's to join, sorted by
-#' computation order. Indicate estimate_name's between <...>.
-#' @param header A vector containing which elements should go into the header
-#' in order. Allowed are: `cdm_name`, `group`, `strata`, `additional`,
-#' `variable`, `estimate`, `settings`.
-#' @param split A vector containing the name-level groups to split ("group",
-#' "strata", "additional"), or an empty character vector to not split.
-#' @param groupColumn Column to use as group labels.
-#' @param excludeColumns Columns to drop from the output table.
-#' @param .options Named list with additional formatting options.
-#' CohortCharacteristics::optionsTableCharacteristics() shows allowed arguments and
-#' their default values.
+#' @param result A summarised_result object. Output of
+#' summariseCharacteristics().
+#' @param type Type of table. Check supported types with
+#' `visOmopResults::tableType()`.
+#' @param header Columns to use as header. See options with
+#' `tidyColumns(result)`.
+#' @param groupColumn Columns to group by. See options with
+#' `tidyColumns(result)`.
+#' @param hide Columns to hide from the visualisation. See options with
+#' `tidyColumns(result)`.
 #'
 #' @examples
 #' \donttest{
@@ -40,11 +35,11 @@
 #'
 #' cdm <- mockCohortCharacteristics()
 #'
-#' cdm$cohort1 |>
-#'   summariseCharacteristics() |>
-#'   tableCharacteristics()
+#' result <- summariseCharacteristics(cdm$cohort1)
 #'
-#' mockDisconnect(cdm = cdm)
+#' tableCharacteristics(result)
+#'
+#' mockDisconnect(cdm)
 #' }
 #'
 #' @return A table with a formatted version of the summariseCharacteristics
@@ -54,165 +49,41 @@
 #'
 tableCharacteristics <- function(result,
                                  type = "gt",
-                                 formatEstimateName = c(
-                                   "N (%)" = "<count> (<percentage>%)",
-                                   "N" = "<count>",
-                                   "Median [Q25 - Q75]" = "<median> [<q25> - <q75>]",
-                                   "Mean (SD)" = "<mean> (<sd>)",
-                                   "Range" = "<min> to <max>"
-                                 ),
-                                 header = c("group"),
-                                 split = c("group", "strata"),
+                                 header = c("cdm_name", "cohort_name"),
                                  groupColumn = NULL,
-                                 excludeColumns = c(
-                                   "result_id", "estimate_type",
-                                   "additional_name", "additional_level"
-                                 ),
-                                 .options = list()) {
+                                 hide = character()) {
+  # initial checks
+  result <- omopgenerics::validateResultArgument(result)
+  omopgenerics::assertChoice(type, c("gt", "flextable", "tibble"))
 
-
-  if (!inherits(result, "summarised_result")) {
-    cli::cli_abort("result must be a summarised result")
-  }
-  if (nrow(result) == 0) {
-    cli::cli_warn("Empty result object")
-    return(emptyResultTable(type = type))
-  }
-
-   # check input
-  intersects <- tidyr::expand_grid(
-    "type" = c("cohort", "concept", "table"),
-    "value" = c("flag", "count", "date", "days")
-  ) |>
-    dplyr::mutate("x" = paste0(
-      "summarised_", .data$type, "_intersect_", .data$value
-    )) |>
-    dplyr::pull("x")
-  result <- omopgenerics::newSummarisedResult(result) |>
-    visOmopResults::filterSettings(.data$result_type %in% c(
-      "summarised_characteristics", "summarised_demographics", intersects
-    ))
-
-  if (nrow(result) == 0) {
-    cli::cli_warn("No characteristics results found")
-    return(emptyResultTable(type = type))
-  }
-
-  checkmate::assertList(.options)
-
-  # add default options
-  .options <- defaultCharacteristicsOptions(.options)
-
-  # ensure results are nicely ordered
-  defaultVariableNames <- c(
-    "Number records", "Number subjects",
-    "Cohort start date", "Cohort end date",
-    "Sex",
-    "Age", "Age group",
-    "Prior observation",
-    "Future observation"
-  )
-  variableNames <- result |>
-    dplyr::select("variable_name") |>
-    dplyr::filter(!.data$variable_name %in% .env$defaultVariableNames) |>
-    dplyr::distinct() |>
-    dplyr::pull("variable_name")
-
-  variableLevels <- sort(result |>
-    dplyr::select("variable_level") |>
-    dplyr::filter(!is.na(.data$variable_level)) |>
-    dplyr::distinct() |>
-    dplyr::pull("variable_level"))
-
+  # check settings
   result <- result |>
-    dplyr::mutate(variable_name = factor(.data$variable_name,
-      levels = c(
-        defaultVariableNames,
-        variableNames
-      )
-    )) |>
-    dplyr::mutate(variable_level = factor(.data$variable_level,
-      levels = variableLevels
-    )) |>
-    dplyr::arrange(.data$variable_name, .data$variable_level) |>
-    dplyr::mutate(variable_name = as.character(.data$variable_name)) |>
-    dplyr::mutate(variable_level = as.character(.data$variable_level))
-
-  if (nrow(result)==0){
-    cli::cli_warn(
-      "Output is empty, perhaps your result_type is not supported by this function."
+    visOmopResults::filterSettings(
+      .data$result_type == "summarise_characteristics"
     )
-   suppressWarnings(
-     # format table
-     result <- visOmopResults::visOmopTable(
-       result = result,
-       formatEstimateName = formatEstimateName,
-       header = header,
-       groupColumn = groupColumn,
-       split = split,
-       type = type,
-       excludeColumns = excludeColumns,
-       .options = .options
-     )
-   )
-  } else {
+
+  if (nrow(result) == 0) {
+    cli::cli_warn("`result` object does not contain any `result_type == 'summarise_characteristics'` information.")
+    return(emptyResultTable(type))
+  }
+
+  estimateName <- c(
+    "N (%)" = "<count> (<percentage>%)",
+    "N" = "<count>",
+    "Median [Q25 - Q75]" = "<median> [<q25> - <q75>]",
+    "Mean (SD)" = "<mean> (<sd>)",
+    "Range" = "<min> to <max>"
+  )
 
   # format table
-  result <- visOmopResults::visOmopTable(
+  tab <- visOmopResults::visOmopTable(
     result = result,
-    formatEstimateName = formatEstimateName,
+    estimateName = estimateName,
     header = header,
     groupColumn = groupColumn,
-    split = split,
     type = type,
-    excludeColumns = excludeColumns,
-    .options = .options
-  )
-  }
-
-  return(result)
-}
-
-defaultCharacteristicsOptions <- function(.options) {
-  defaults <- list(
-    "decimals" = c(integer = 0, numeric = 2, percentage = 1, proportion = 3),
-    "decimalMark" = ".",
-    "bigMark" = ",",
-    "keepNotFormatted" = TRUE,
-    "useFormatOrder" = TRUE,
-    "delim" = "\n",
-    "style" = "default",
-    "na" = "-",
-    "title" = NULL,
-    "subtitle" = NULL,
-    "caption" = NULL,
-    "groupAsColumn" = FALSE,
-    "groupOrder" = NULL,
-    "colsToMergeRows" = "all_columns"
+    hide = hide
   )
 
-  for (opt in names(.options)) {
-    defaults[[opt]] <- .options[[opt]]
-  }
-  return(defaults)
-}
-
-#' Additional arguments for the function tableCharacteristics.
-#'
-#' @description
-#' It provides a list of allowed inputs for .option argument in
-#' tableCharacteristics, and their given default values.
-#'
-#'
-#' @return The default .options named list.
-#'
-#' @export
-#'
-#' @examples
-#' {
-#'   optionsTableCharacteristics()
-#' }
-#'
-optionsTableCharacteristics <- function() {
-  return(defaultCharacteristicsOptions(NULL))
+  return(tab)
 }

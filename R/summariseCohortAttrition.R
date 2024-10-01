@@ -27,15 +27,97 @@
 #' @examples
 #' \donttest{
 #' library(CohortCharacteristics)
+#' library(dplyr, warn.conflicts = FALSE)
+#'
 #' cdm <- mockCohortCharacteristics()
-#' summariseCohortAttrition(cohort = cdm$cohort1) |> dplyr::glimpse()
-#' mockDisconnect(cdm = cdm)
+#'
+#' summariseCohortAttrition(cohort = cdm$cohort1) |>
+#'   glimpse()
+#'
+#' mockDisconnect(cdm)
 #' }
 summariseCohortAttrition <- function(cohort,
                                      cohortId = NULL) {
-  assertClass(cohort, "cohort_table")
-  assertNumeric(cohortId, integerish = TRUE, min = 1, null = TRUE)
+  cohort <- omopgenerics::validateCohortArgument(cohort)
+  cohortId <- omopgenerics::validateCohortIdArgument(cohortId, cohort)
 
-  cohort |>
-    summaryInternal(cohortId = cohortId, resultType = "cohort_attrition")
+  set <- omopgenerics::settings(cohort) |>
+    dplyr::filter(.data$cohort_definition_id %in% .env$cohortId) |>
+    dplyr::mutate("result_id" = as.integer(dplyr::row_number()))
+
+  attritionSummary <- omopgenerics::attrition(cohort) |>
+    summariseAttrition(
+      set, omopgenerics::tableName(cohort), omopgenerics::cdmName(cohort)
+    )
+
+  return(attritionSummary)
+}
+
+summariseAttrition <- function(att,
+                               set = NULL,
+                               tname = "unknown",
+                               cname = "unknown") {
+  if (is.null(set)) {
+    set <- att |>
+      dplyr::select("cohort_definition_id") |>
+      dplyr::distinct() |>
+      dplyr::mutate(
+        "result_id" = .data$cohort_definition_id,
+        "cohort_name" = paste0("unknown_", .data$cohort_definition_id)
+      )
+  }
+  att |>
+    dplyr::inner_join(
+      set |>
+        dplyr::select("cohort_definition_id", "result_id", "cohort_name"),
+      by = "cohort_definition_id"
+    ) |>
+    dplyr::select(-"cohort_definition_id") |>
+    dplyr::mutate(dplyr::across(!"result_id", as.character)) |>
+    tidyr::pivot_longer(
+      cols = c(
+        "number_records", "number_subjects", "excluded_records",
+        "excluded_subjects"
+      ),
+      names_to = "variable_name",
+      values_to = "estimate_value"
+    ) |>
+    dplyr::mutate(
+      "estimate_name" = "count",
+      "variable_level" = NA_character_,
+      "estimate_type" = "integer",
+      "cdm_name" = cname
+    ) |>
+    visOmopResults::uniteGroup("cohort_name") |>
+    visOmopResults::uniteStrata("reason") |>
+    visOmopResults::uniteAdditional("reason_id") |>
+    orderSummaryAttrition() |>
+    omopgenerics::newSummarisedResult(
+      settings = set |>
+        dplyr::select(!"cohort_name") |>
+        dplyr::mutate(
+          "result_type" = "summarise_cohort_attrition",
+          "package_name" = "CohortCharacteristics",
+          "package_version" = as.character(utils::packageVersion("CohortCharacteristics")),
+          "table_name" = tname
+        ) |>
+        dplyr::relocate(dplyr::all_of(c(
+          "result_id", "result_type", "package_name", "package_version"
+        )))
+    )
+}
+orderSummaryAttrition <- function(x) {
+  vars <- c(
+    "number_records", "number_subjects", "excluded_records",
+    "excluded_subjects"
+  )
+  x |>
+    dplyr::mutate(additional_level = as.numeric(.data$additional_level)) |>
+    dplyr::inner_join(
+      dplyr::tibble(variable_name = vars, var_id = seq_along(vars)),
+      by = "variable_name"
+    ) |>
+    dplyr::arrange(.data$result_id, .data$additional_level, .data$var_id) |>
+    dplyr::select(!"var_id") |>
+    dplyr::mutate(additional_level = as.character(.data$additional_level))
 }

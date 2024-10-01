@@ -2,51 +2,38 @@
 % Please edit documentation in R/tableCharacteristics.R
 \name{tableCharacteristics}
 \alias{tableCharacteristics}
-\title{Format a summarised_characteristics object into a visual table.}
+\title{Format a summarise_characteristics object into a visual table.}
 \usage{
 tableCharacteristics(
   result,
   type = "gt",
-  formatEstimateName = c(`N (\%)` = "<count> (<percentage>\%)", N = "<count>",
-    `Median [Q25 - Q75]` = "<median> [<q25> - <q75>]", `Mean (SD)` = "<mean> (<sd>)",
-    Range = "<min> to <max>"),
-  header = c("group"),
-  split = c("group", "strata"),
+  header = c("cdm_name", "cohort_name"),
   groupColumn = NULL,
-  excludeColumns = c("result_id", "estimate_type", "additional_name", "additional_level"),
-  .options = list()
+  hide = character()
 )
 }
 \arguments{
-\item{result}{A summarised_characteristics object.}
+\item{result}{A summarised_result object. Output of
+summariseCharacteristics().}
 
-\item{type}{Type of desired formatted table, possibilities: "gt",
-"flextable", "tibble".}
+\item{type}{Type of table. Check supported types with
+\code{visOmopResults::tableType()}.}
 
-\item{formatEstimateName}{Named list of estimate name's to join, sorted by
-computation order. Indicate estimate_name's between <...>.}
+\item{header}{Columns to use as header. See options with
+\code{tidyColumns(result)}.}
 
-\item{header}{A vector containing which elements should go into the header
-in order. Allowed are: `cdm_name`, `group`, `strata`, `additional`,
-`variable`, `estimate`, `settings`.}
+\item{groupColumn}{Columns to group by. See options with
+\code{tidyColumns(result)}.}
 
-\item{split}{A vector containing the name-level groups to split ("group",
-"strata", "additional"), or an empty character vector to not split.}
-
-\item{groupColumn}{Column to use as group labels.}
-
-\item{excludeColumns}{Columns to drop from the output table.}
-
-\item{.options}{Named list with additional formatting options.
-CohortCharacteristics::optionsTableCharacteristics() shows allowed arguments and
-their default values.}
+\item{hide}{Columns to hide from the visualisation. See options with
+\code{tidyColumns(result)}.}
 }
 \value{
 A table with a formatted version of the summariseCharacteristics
 result.
 }
 \description{
-`r lifecycle::badge("experimental")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \donttest{
@@ -54,11 +41,11 @@ library(CohortCharacteristics)
 
 cdm <- mockCohortCharacteristics()
 
-cdm$cohort1 |>
-  summariseCharacteristics() |>
-  tableCharacteristics()
+result <- summariseCharacteristics(cdm$cohort1)
 
-mockDisconnect(cdm = cdm)
+tableCharacteristics(result)
+
+mockDisconnect(cdm)
 }
 
 }

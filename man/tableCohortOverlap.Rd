@@ -6,49 +6,41 @@
 \usage{
 tableCohortOverlap(
   result,
+  uniqueCombinations = TRUE,
   type = "gt",
-  formatEstimateName = c(`N (\%)` = "<count> (<percentage>\%)"),
-  header = c("strata"),
-  split = c("group", "strata", "additional"),
-  groupColumn = NULL,
-  excludeColumns = c("result_id", "estimate_type"),
-  .options = list()
+  header = c("variable_name"),
+  groupColumn = c("cdm_name"),
+  hide = c("variable_level")
 )
 }
 \arguments{
 \item{result}{A summariseOverlapCohort result.}
 
-\item{type}{Type of desired formatted table, possibilities: "gt",
-"flextable", "tibble".}
+\item{uniqueCombinations}{Whether to display unique combinations
+reference - comparator.}
 
-\item{formatEstimateName}{Named list of estimate name's to join, sorted by
-computation order. Indicate estimate_name's between <...>.}
+\item{type}{Type of table. Check supported types with
+\code{visOmopResults::tableType()}.}
 
-\item{header}{A vector containing which elements should go into the header
-in order. Allowed are: `cdm_name`, `group`, `strata`, `additional`,
-`variable`, `estimate`, `settings`.}
+\item{header}{Columns to use as header. See options with
+\code{tidyColumns(result)}.}
 
-\item{split}{A vector containing the name-level groups to split ("group",
-"strata", "additional"), or an empty character vector to not split.}
+\item{groupColumn}{Columns to group by. See options with
+\code{tidyColumns(result)}.}
 
-\item{groupColumn}{Column to use as group labels.}
-
-\item{excludeColumns}{Columns to drop from the output table.}
-
-\item{.options}{Named list with additional formatting options.
-CohortCharacteristics::optionsTableCohortOverlap() shows allowed arguments and
-their default values.}
+\item{hide}{Columns to hide from the visualisation. See options with
+\code{tidyColumns(result)}.}
 }
 \value{
 A formatted table of the summariseOverlapCohort result.
 }
 \description{
-`r lifecycle::badge("experimental")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \examples{
 \donttest{
 library(CohortCharacteristics)
-cdm <- CohortCharacteristics::mockCohortCharacteristics()
+cdm <- mockCohortCharacteristics()
 overlap <- summariseCohortOverlap(cdm$cohort2)
 tableCohortOverlap(overlap)
 mockDisconnect(cdm = cdm)

@@ -29,17 +29,21 @@
 #' @examples
 #' \donttest{
 #' library(CohortCharacteristics)
-#' cdm <- CohortCharacteristics::mockCohortCharacteristics()
-#' summariseCohortOverlap(cdm$cohort2) |> dplyr::glimpse()
-#' mockDisconnect(cdm = cdm)
+#' library(dplyr, warn.conflicts = FALSE)
+#'
+#' cdm <- mockCohortCharacteristics()
+#'
+#' summariseCohortOverlap(cdm$cohort2) |>
+#'   glimpse()
+#'
+#' mockDisconnect(cdm)
 #' }
 summariseCohortOverlap <- function(cohort,
                                    cohortId = NULL,
                                    strata = list()) {
   # validate inputs
-  assertClass(cohort, "cohort_table")
-  checkmate::assertTRUE(all(c("cohort_definition_id", "subject_id", "cohort_start_date", "cohort_end_date") %in% colnames(cohort)))
-  checkmate::assertNumeric(cohortId, any.missing = FALSE, null.ok = TRUE)
+  cohort <- omopgenerics::validateCohortArgument(cohort)
+  omopgenerics::assertNumeric(cohortId, null = TRUE)
   checkStrata(strata, cohort)
 
   # add cohort names
@@ -188,18 +192,21 @@ summariseCohortOverlap <- function(cohort,
     dplyr::mutate(strata_name = "overall", strata_level = "overall")
 
   if (length(strata) > 0) {
-    combinations <- lapply(strata, function(strataCols, data = overlapStrataData) {
-      data |>
-        dplyr::select(dplyr::all_of(strataCols)) |>
-        dplyr::distinct() |>
-        dplyr::collect() |>
-        visOmopResults::uniteStrata(cols = strataCols)
-    }) |>
-      dplyr::bind_rows() |>
-      dplyr::cross_join(
-        combinations |> dplyr::select(-"strata_name", -"strata_level")
-      ) |>
-      dplyr::bind_rows(combinations)
+    combinations <- combinations |>
+      dplyr::bind_rows(
+        lapply(strata, function(strataCols, data = overlapStrataData) {
+          data |>
+            dplyr::select(dplyr::all_of(strataCols)) |>
+            dplyr::distinct() |>
+            dplyr::collect() |>
+            dplyr::arrange(dplyr::across(dplyr::everything())) |>
+            visOmopResults::uniteStrata(cols = strataCols)
+        }) |>
+          dplyr::bind_rows() |>
+          dplyr::cross_join(
+            combinations |> dplyr::select(-"strata_name", -"strata_level")
+          )
+      )
   }
 
   noOverlap <- combinations |>
@@ -226,6 +233,13 @@ summariseCohortOverlap <- function(cohort,
   }
 
   overlap <- overlap |>
+    dplyr::left_join(
+      combinations |>
+        dplyr::mutate(order_id = dplyr::row_number()),
+      by = c("group_name", "group_level", "strata_name", "strata_level")
+    ) |>
+    dplyr::arrange(.data$order_id) |>
+    dplyr::select(!"order_id") |>
     dplyr::mutate(
       result_id = as.integer(1),
       cdm_name = CDMConnector::cdmName(cdm),
@@ -239,7 +253,7 @@ summariseCohortOverlap <- function(cohort,
     omopgenerics::newSummarisedResult(
       settings = dplyr::tibble(
         result_id = 1L,
-        result_type = "cohort_overlap",
+        result_type = "summarise_cohort_overlap",
         package_name = "CohortCharacteristics",
         package_version = as.character(utils::packageVersion("CohortCharacteristics"))
       )

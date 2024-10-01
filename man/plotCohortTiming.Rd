@@ -8,35 +8,59 @@ plotCohortTiming(
   result,
   plotType = "boxplot",
   timeScale = "days",
-  facet = NULL,
-  colour = NULL,
-  colourName = NULL,
   uniqueCombinations = TRUE,
-  .options = list()
+  facet = c("cdm_name", "cohort_name_reference"),
+  colour = c("cohort_name_comparator")
 )
 }
 \arguments{
-\item{result}{A summariseCohortTiming result.}
+\item{result}{A summarised_result object. Output of summariseCohortTiming().}
 
 \item{plotType}{Type of desired formatted table, possibilities are "boxplot" and
 "density".}
 
 \item{timeScale}{Time scale to plot results. Can be days or years.}
 
-\item{facet}{variables to facet by}
+\item{uniqueCombinations}{Whether to restrict to unique reference and
+comparator comparisons.}
 
-\item{colour}{Variables to use for colours}
+\item{facet}{Columns to facet by. See options with \code{tidyColumns(result)}.
+Formula is also allowed to specify rows and columns.}
 
-\item{colourName}{Colour legend name}
-
-\item{uniqueCombinations}{If TRUE, only unique combinations of reference and
-comparator plots will be plotted.}
-
-\item{.options}{Additional plotting options}
+\item{colour}{Columns to color by. See options with \code{tidyColumns(result)}.}
 }
 \value{
 A ggplot.
 }
 \description{
-`r lifecycle::badge("experimental")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+}
+\examples{
+\dontrun{
+library(CohortCharacteristics)
+library(duckdb)
+library(CDMConnector)
+library(DrugUtilisation)
+
+con <- dbConnect(duckdb(), eunomiaDir())
+cdm <- cdmFromCon(con, cdmSchem = "main", writeSchema = "main")
+
+cdm <- generateIngredientCohortSet(
+  cdm = cdm,
+  name = "my_cohort",
+  ingredient = c("acetaminophen", "morphine", "warfarin")
+)
+
+timings <- summariseCohortTiming(cdm$my_cohort)
+
+plotCohortTiming(
+  timings,
+  timeScale = "years",
+  facet = c("cdm_name", "cohort_name_reference"),
+  colour = c("cohort_name_comparator")
+)
+
+cdmDisconnect(cdm)
+}
+
 }
