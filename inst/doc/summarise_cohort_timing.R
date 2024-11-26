@@ -5,9 +5,7 @@ knitr::opts_chunk$set(
 )
 
 library(CDMConnector)
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == "") Sys.setenv("EUNOMIA_DATA_FOLDER" = tempdir())
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))) dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-if (!eunomia_is_available()) downloadEunomiaData()
+requireEunomia()
 
 ## -----------------------------------------------------------------------------
 library(duckdb)
@@ -63,7 +61,7 @@ plotCohortTiming(
 ## -----------------------------------------------------------------------------
 plotCohortTiming(
   medsTiming,
-  plotType = "density",
+  plotType = "densityplot",
   timeScale = "years",
   uniqueCombinations = FALSE
 )

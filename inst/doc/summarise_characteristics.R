@@ -6,9 +6,7 @@ knitr::opts_chunk$set(
 )
 
 library(CDMConnector)
-if (Sys.getenv("EUNOMIA_DATA_FOLDER") == "") Sys.setenv("EUNOMIA_DATA_FOLDER" = tempdir())
-if (!dir.exists(Sys.getenv("EUNOMIA_DATA_FOLDER"))) dir.create(Sys.getenv("EUNOMIA_DATA_FOLDER"))
-if (!eunomia_is_available()) downloadEunomiaData()
+requireEunomia()
 
 ## -----------------------------------------------------------------------------
 library(duckdb)
@@ -52,7 +50,7 @@ tableCharacteristics(chars)
 chars |>
   filter(variable_name == "Age") |>
   plotCharacteristics(
-    plotStyle = "boxplot",
+    plotType = "boxplot",
     colour = "cohort_name",
     facet = c("cdm_name")
   )
@@ -74,7 +72,7 @@ tableCharacteristics(chars,
 chars |>
   filter(variable_name == "Prior observation") |>
   plotCharacteristics(
-    plotStyle = "boxplot",
+    plotType = "boxplot",
     colour = "cohort_name",
     facet = c("age_group")
   ) +
@@ -119,7 +117,7 @@ plot_data <- chars |>
 
 plot_data |>
   plotCharacteristics(
-    plotStyle = "barplot",
+    plotType = "barplot",
     colour = "variable_level",
     facet = c("cdm_name", "cohort_name")
   ) +
