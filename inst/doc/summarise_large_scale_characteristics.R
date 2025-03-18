@@ -6,8 +6,7 @@ knitr::opts_chunk$set(
   warning = FALSE
 )
 
-library(CDMConnector)
-requireEunomia()
+CDMConnector::requireEunomia()
 
 ## -----------------------------------------------------------------------------
 library(duckdb)

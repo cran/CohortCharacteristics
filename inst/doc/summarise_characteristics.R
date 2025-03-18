@@ -5,8 +5,7 @@ knitr::opts_chunk$set(
   fig.width = 7
 )
 
-library(CDMConnector)
-requireEunomia()
+CDMConnector::requireEunomia()
 
 ## -----------------------------------------------------------------------------
 library(duckdb)

@@ -4,8 +4,7 @@ knitr::opts_chunk$set(
   comment = "#>", message = FALSE, warning = FALSE
 )
 
-library(CDMConnector)
-requireEunomia()
+CDMConnector::requireEunomia()
 
 ## ----message=FALSE, warning = FALSE-------------------------------------------
 library(duckdb)
