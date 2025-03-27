@@ -1,4 +1,4 @@
-3bef53e2e8f6b09161fa438abb338db9 *DESCRIPTION
+14262061cee7efe8debb0c08b75c4d5d *DESCRIPTION
 a53950813fc98e7b78aa7e75b90f5da0 *NAMESPACE
 e8a3c1c802eb3e97ae72c7b364eab15e *NEWS.md
 b08122aab811cd60390ecdb44635740f *R/CohortCharacteristics-package.R
@@ -7,7 +7,7 @@ b08122aab811cd60390ecdb44635740f *R/CohortCharacteristics-package.R
 b9e5bf0c518f5b16467d09ad79ff62a2 *R/documentationHelpers.R
 4bb1781c1f514daab5df64bd263abd5d *R/plot.R
 dc8fc194bcdacf71c84f836de1ab11d1 *R/plotCharacteristics.R
-edeeacbf9d3ab6c75e73f44e187fd9ec *R/plotCohortAttrition.R
+72820e99695b2f606e15ff2455c953f9 *R/plotCohortAttrition.R
 a2bf59015a9e97c5bc02983ecd50d6af *R/plotCohortCount.R
 08b0d1f8ae712da9c68329a793d46c41 *R/plotCohortOverlap.R
 25771de350e01122fbd8002a0c1bbaed *R/plotCohortTiming.R
@@ -33,16 +33,16 @@ f93697115ed3bad02cfc6bc1eaeeed33 *R/tableCohortTiming.R
 195291877e9b5e0064167170b96d7e02 *inst/WORDLIST
 70c452049f06c4a700b4bc3dc70e8bf8 *inst/doc/summarise_characteristics.R
 b9711ec2146dfbad0006db42aef8dba9 *inst/doc/summarise_characteristics.Rmd
-67f6db400457b47a6f446efc9d159f0d *inst/doc/summarise_characteristics.html
+1571cae25af5f2dcee061d8d1cc28ee8 *inst/doc/summarise_characteristics.html
 73f820299329b6c41f07e9bf8a21ccb8 *inst/doc/summarise_cohort_overlap.R
 3b2a4b7e5bb4bf60ac9aef77ad4c7784 *inst/doc/summarise_cohort_overlap.Rmd
-3c945c400c4b24e451d2d83d6a4a634b *inst/doc/summarise_cohort_overlap.html
+b62b65e676ac14134a48f73a8baf007f *inst/doc/summarise_cohort_overlap.html
 cba8300dfa5ad6e37f90e56e896080e8 *inst/doc/summarise_cohort_timing.R
 ed2ba0afc01a3acad8eee55748cbd5b7 *inst/doc/summarise_cohort_timing.Rmd
-d2bb7be9079226302c4deceb2c6fbcca *inst/doc/summarise_cohort_timing.html
+e9c5eb0d4bceaed4f31e586e4bb121b1 *inst/doc/summarise_cohort_timing.html
 2e7a9838f7319ffd9594832225bebfe4 *inst/doc/summarise_large_scale_characteristics.R
 431aa56792e8cef66ed1b6751b1b4179 *inst/doc/summarise_large_scale_characteristics.Rmd
-676c66477cf89ef87bc533ba6f1f12fa *inst/doc/summarise_large_scale_characteristics.html
+bdd3673a18633c2b0cab425564e83d50 *inst/doc/summarise_large_scale_characteristics.html
 adc34e23f282e98a4dd3e50c9fac1c43 *man/CohortCharacteristics-package.Rd
 0740e16b06cc71592c1be7b552f2fda5 *man/availablePlotColumns.Rd
 53dbf46dccaf8a39cb650abedf956c03 *man/availableTableColumns.Rd
@@ -111,7 +111,7 @@ f5e5b6e213425615c7b21884912c60b5 *man/uniqueCombinationsDoc.Rd
 1f03a07f8f1e4dd9010e19950b654a29 *tests/testthat/setup.R
 5651e06276c7ba7052aaf7f04028b55e *tests/testthat/test-benchmarkCohortCharacteristics.R
 c3f11e74b27a2361c52b70bc799d8dff *tests/testthat/test-plotCharacteristics.R
-68adee8fd09fff40e75be080c61bcbe9 *tests/testthat/test-plotCohortAttrition.R
+bb92e48b5abb22632bf731f8fb49bfcc *tests/testthat/test-plotCohortAttrition.R
 900554360287b90419019fd56e6445b7 *tests/testthat/test-plotCohortCount.R
 8b5147398ace0b4e51d650c51d660c4c *tests/testthat/test-plotCohortOverlap.R
 ec2433c4fed6eaae0fe0a4a8f16b6369 *tests/testthat/test-plotCohortTiming.R
