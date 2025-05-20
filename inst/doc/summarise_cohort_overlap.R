@@ -66,7 +66,6 @@ tableCohortOverlap(medsOverlap, uniqueCombinations = FALSE)
 ## -----------------------------------------------------------------------------
 plotCohortOverlap(
   medsOverlap,
-  y = c("cohort_name_reference", "cohort_name_comparator"),
   facet = c("age_group"),
   uniqueCombinations = TRUE
 )

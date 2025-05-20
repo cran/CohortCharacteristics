@@ -44,9 +44,8 @@ lsc <- cdm$ankle_sprain |>
 tableLargeScaleCharacteristics(lsc)
 
 ## -----------------------------------------------------------------------------
-tableLargeScaleCharacteristics(lsc,
-  topConcepts = 5
-)
+tableTopLargeScaleCharacteristics(lsc,
+                                  topConcepts = 5)
 
 ## -----------------------------------------------------------------------------
 lsc <- cdm$ankle_sprain |>
@@ -58,5 +57,16 @@ lsc <- cdm$ankle_sprain |>
     minimumFrequency = 0.1
   )
 
-tableLargeScaleCharacteristics(lsc)
+tableTopLargeScaleCharacteristics(lsc)
+
+## -----------------------------------------------------------------------------
+plotLargeScaleCharacteristics(lsc)
+
+## -----------------------------------------------------------------------------
+plotComparedLargeScaleCharacteristics(
+  result = lsc,
+  colour = "sex",
+  reference = 'overall',
+  facet = cohort_name ~ variable_level
+)
 

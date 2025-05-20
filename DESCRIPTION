@@ -2,7 +2,7 @@ Package: CohortCharacteristics
 Type: Package
 Title: Summarise and Visualise Characteristics of Patients in the OMOP
         CDM
-Version: 0.5.1
+Version: 1.0.0
 Authors@R: c(
     person("Marti", "Catala", , "marti.catalasabate@ndorms.ox.ac.uk", 
     role = c("aut", "cre"), comment = c(ORCID = "0000-0003-3308-9905")),
@@ -27,7 +27,7 @@ License: Apache License (>= 2)
 Encoding: UTF-8
 RoxygenNote: 7.3.2
 Imports: CDMConnector (>= 1.6.0), dplyr, tidyr, rlang, cli, stringr,
-        omopgenerics (>= 0.4.0), PatientProfiles (>= 1.3.1), snakecase,
+        omopgenerics (>= 1.2.0), PatientProfiles (>= 1.3.1), snakecase,
         lifecycle, purrr
 URL: https://darwin-eu.github.io/CohortCharacteristics/
 BugReports: https://github.com/darwin-eu/CohortCharacteristics/issues
@@ -38,18 +38,21 @@ Config/testthat/parallel: true
 VignetteBuilder: knitr
 Suggests: CodelistGenerator, visOmopResults (>= 1.0.0),
         CohortConstructor, covr, DBI, dbplyr, DiagrammeR,
-        DiagrammeRsvg, DrugUtilisation, duckdb (>= 1.0.0), flextable,
-        ggplot2, ggpubr, glue, grid, gt, here, Hmisc, htmltools, knitr,
-        odbc, omock, plotly, png, rmarkdown, RPostgres, rsvg, scales,
-        spelling, testthat (>= 3.1.5), tictoc, withr
+        DiagrammeRsvg, DrugUtilisation, DT, duckdb (>= 1.0.0),
+        flextable, ggplot2, ggpubr, glue, grid, gt, here, Hmisc,
+        htmltools, knitr, odbc, omock, plotly, png, reactable,
+        rmarkdown, RPostgres, rsvg, scales, spelling, testthat (>=
+        3.1.5), tictoc, withr, reactable, DT
 NeedsCompilation: no
-Packaged: 2025-03-27 15:31:02 UTC; martics
-Author: Marti Catala [aut, cre] (<https://orcid.org/0000-0003-3308-9905>),
-  Yuchen Guo [aut] (<https://orcid.org/0000-0002-0847-4855>),
-  Mike Du [ctb] (<https://orcid.org/0000-0002-9517-8834>),
-  Kim Lopez-Guell [aut] (<https://orcid.org/0000-0002-8462-8668>),
-  Edward Burn [aut] (<https://orcid.org/0000-0002-9286-1128>),
-  Nuria Mercade-Besora [aut] (<https://orcid.org/0009-0006-7948-3747>),
-  Marta Alcalde [aut] (<https://orcid.org/0009-0002-4405-1814>)
+Packaged: 2025-05-20 14:27:03 UTC; martics
+Author: Marti Catala [aut, cre] (ORCID:
+    <https://orcid.org/0000-0003-3308-9905>),
+  Yuchen Guo [aut] (ORCID: <https://orcid.org/0000-0002-0847-4855>),
+  Mike Du [ctb] (ORCID: <https://orcid.org/0000-0002-9517-8834>),
+  Kim Lopez-Guell [aut] (ORCID: <https://orcid.org/0000-0002-8462-8668>),
+  Edward Burn [aut] (ORCID: <https://orcid.org/0000-0002-9286-1128>),
+  Nuria Mercade-Besora [aut] (ORCID:
+    <https://orcid.org/0009-0006-7948-3747>),
+  Marta Alcalde [aut] (ORCID: <https://orcid.org/0009-0002-4405-1814>)
 Repository: CRAN
-Date/Publication: 2025-03-27 18:40:07 UTC
+Date/Publication: 2025-05-20 22:30:11 UTC

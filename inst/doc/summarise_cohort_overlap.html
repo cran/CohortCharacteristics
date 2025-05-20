@@ -425,22 +425,25 @@ medsOverlap |&gt;
 #&gt; $ estimate_value   &lt;chr&gt; &quot;1&quot;, &quot;136&quot;, &quot;2543&quot;, &quot;131&quot;, &quot;6&quot;, &quot;29&quot;, &quot;2543&quot;, &quot;136&quot;, …
 #&gt; $ additional_name  &lt;chr&gt; &quot;overall&quot;, &quot;overall&quot;, &quot;overall&quot;, &quot;overall&quot;, &quot;overall&quot;…
 #&gt; $ additional_level &lt;chr&gt; &quot;overall&quot;, &quot;overall&quot;, &quot;overall&quot;, &quot;overall&quot;, &quot;overall&quot;…</code></pre>
-<p>We have table and plotting functions to help view our results.</p>
+<p>We have table and plotting functions to help view our results. The
+<code>uniqueCombinations</code> can be use to include/exclude non unique
+combinations between the comparator and reference cohorts for the
+overlap.</p>
 <pre class="r"><code>tableCohortOverlap(medsOverlap, uniqueCombinations = FALSE)</code></pre>
-<div id="aajjryzwey" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#aajjryzwey table {
+<div id="tnwwvswaai" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#tnwwvswaai table {
 font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
-#aajjryzwey thead, #aajjryzwey tbody, #aajjryzwey tfoot, #aajjryzwey tr, #aajjryzwey td, #aajjryzwey th {
+#tnwwvswaai thead, #tnwwvswaai tbody, #tnwwvswaai tfoot, #tnwwvswaai tr, #tnwwvswaai td, #tnwwvswaai th {
 border-style: none;
 }
-#aajjryzwey p {
+#tnwwvswaai p {
 margin: 0;
 padding: 0;
 }
-#aajjryzwey .gt_table {
+#tnwwvswaai .gt_table {
 display: table;
 border-collapse: collapse;
 line-height: normal;
@@ -465,11 +468,11 @@ border-left-style: none;
 border-left-width: 2px;
 border-left-color: #D3D3D3;
 }
-#aajjryzwey .gt_caption {
+#tnwwvswaai .gt_caption {
 padding-top: 4px;
 padding-bottom: 4px;
 }
-#aajjryzwey .gt_title {
+#tnwwvswaai .gt_title {
 color: #333333;
 font-size: 125%;
 font-weight: initial;
@@ -480,7 +483,7 @@ padding-right: 5px;
 border-bottom-color: #FFFFFF;
 border-bottom-width: 0;
 }
-#aajjryzwey .gt_subtitle {
+#tnwwvswaai .gt_subtitle {
 color: #333333;
 font-size: 85%;
 font-weight: initial;
@@ -491,7 +494,7 @@ padding-right: 5px;
 border-top-color: #FFFFFF;
 border-top-width: 0;
 }
-#aajjryzwey .gt_heading {
+#tnwwvswaai .gt_heading {
 background-color: #FFFFFF;
 text-align: center;
 border-bottom-color: #FFFFFF;
@@ -502,12 +505,12 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#aajjryzwey .gt_bottom_border {
+#tnwwvswaai .gt_bottom_border {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#aajjryzwey .gt_col_headings {
+#tnwwvswaai .gt_col_headings {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -521,7 +524,7 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#aajjryzwey .gt_col_heading {
+#tnwwvswaai .gt_col_heading {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -540,7 +543,7 @@ padding-left: 5px;
 padding-right: 5px;
 overflow-x: hidden;
 }
-#aajjryzwey .gt_column_spanner_outer {
+#tnwwvswaai .gt_column_spanner_outer {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -551,13 +554,13 @@ padding-bottom: 0;
 padding-left: 4px;
 padding-right: 4px;
 }
-#aajjryzwey .gt_column_spanner_outer:first-child {
+#tnwwvswaai .gt_column_spanner_outer:first-child {
 padding-left: 0;
 }
-#aajjryzwey .gt_column_spanner_outer:last-child {
+#tnwwvswaai .gt_column_spanner_outer:last-child {
 padding-right: 0;
 }
-#aajjryzwey .gt_column_spanner {
+#tnwwvswaai .gt_column_spanner {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
@@ -568,10 +571,10 @@ overflow-x: hidden;
 display: inline-block;
 width: 100%;
 }
-#aajjryzwey .gt_spanner_row {
+#tnwwvswaai .gt_spanner_row {
 border-bottom-style: hidden;
 }
-#aajjryzwey .gt_group_heading {
+#tnwwvswaai .gt_group_heading {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -596,7 +599,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 text-align: left;
 }
-#aajjryzwey .gt_empty_group_heading {
+#tnwwvswaai .gt_empty_group_heading {
 padding: 0.5px;
 color: #333333;
 background-color: #FFFFFF;
@@ -610,13 +613,13 @@ border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 vertical-align: middle;
 }
-#aajjryzwey .gt_from_md > :first-child {
+#tnwwvswaai .gt_from_md > :first-child {
 margin-top: 0;
 }
-#aajjryzwey .gt_from_md > :last-child {
+#tnwwvswaai .gt_from_md > :last-child {
 margin-bottom: 0;
 }
-#aajjryzwey .gt_row {
+#tnwwvswaai .gt_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -634,7 +637,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 overflow-x: hidden;
 }
-#aajjryzwey .gt_stub {
+#tnwwvswaai .gt_stub {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -646,7 +649,7 @@ border-right-color: #D3D3D3;
 padding-left: 5px;
 padding-right: 5px;
 }
-#aajjryzwey .gt_stub_row_group {
+#tnwwvswaai .gt_stub_row_group {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -659,13 +662,13 @@ padding-left: 5px;
 padding-right: 5px;
 vertical-align: top;
 }
-#aajjryzwey .gt_row_group_first td {
+#tnwwvswaai .gt_row_group_first td {
 border-top-width: 2px;
 }
-#aajjryzwey .gt_row_group_first th {
+#tnwwvswaai .gt_row_group_first th {
 border-top-width: 2px;
 }
-#aajjryzwey .gt_summary_row {
+#tnwwvswaai .gt_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -674,14 +677,14 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#aajjryzwey .gt_first_summary_row {
+#tnwwvswaai .gt_first_summary_row {
 border-top-style: solid;
 border-top-color: #D3D3D3;
 }
-#aajjryzwey .gt_first_summary_row.thick {
+#tnwwvswaai .gt_first_summary_row.thick {
 border-top-width: 2px;
 }
-#aajjryzwey .gt_last_summary_row {
+#tnwwvswaai .gt_last_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -690,7 +693,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#aajjryzwey .gt_grand_summary_row {
+#tnwwvswaai .gt_grand_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -699,7 +702,7 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#aajjryzwey .gt_first_grand_summary_row {
+#tnwwvswaai .gt_first_grand_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -708,7 +711,7 @@ border-top-style: double;
 border-top-width: 6px;
 border-top-color: #D3D3D3;
 }
-#aajjryzwey .gt_last_grand_summary_row_top {
+#tnwwvswaai .gt_last_grand_summary_row_top {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -717,10 +720,10 @@ border-bottom-style: double;
 border-bottom-width: 6px;
 border-bottom-color: #D3D3D3;
 }
-#aajjryzwey .gt_striped {
+#tnwwvswaai .gt_striped {
 background-color: rgba(128, 128, 128, 0.05);
 }
-#aajjryzwey .gt_table_body {
+#tnwwvswaai .gt_table_body {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -728,7 +731,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#aajjryzwey .gt_footnotes {
+#tnwwvswaai .gt_footnotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -741,7 +744,7 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#aajjryzwey .gt_footnote {
+#tnwwvswaai .gt_footnote {
 margin: 0px;
 font-size: 90%;
 padding-top: 4px;
@@ -749,7 +752,7 @@ padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#aajjryzwey .gt_sourcenotes {
+#tnwwvswaai .gt_sourcenotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -762,81 +765,82 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#aajjryzwey .gt_sourcenote {
+#tnwwvswaai .gt_sourcenote {
 font-size: 90%;
 padding-top: 4px;
 padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#aajjryzwey .gt_left {
+#tnwwvswaai .gt_left {
 text-align: left;
 }
-#aajjryzwey .gt_center {
+#tnwwvswaai .gt_center {
 text-align: center;
 }
-#aajjryzwey .gt_right {
+#tnwwvswaai .gt_right {
 text-align: right;
 font-variant-numeric: tabular-nums;
 }
-#aajjryzwey .gt_font_normal {
+#tnwwvswaai .gt_font_normal {
 font-weight: normal;
 }
-#aajjryzwey .gt_font_bold {
+#tnwwvswaai .gt_font_bold {
 font-weight: bold;
 }
-#aajjryzwey .gt_font_italic {
+#tnwwvswaai .gt_font_italic {
 font-style: italic;
 }
-#aajjryzwey .gt_super {
+#tnwwvswaai .gt_super {
 font-size: 65%;
 }
-#aajjryzwey .gt_footnote_marks {
+#tnwwvswaai .gt_footnote_marks {
 font-size: 75%;
 vertical-align: 0.4em;
 position: initial;
 }
-#aajjryzwey .gt_asterisk {
+#tnwwvswaai .gt_asterisk {
 font-size: 100%;
 vertical-align: 0;
 }
-#aajjryzwey .gt_indent_1 {
+#tnwwvswaai .gt_indent_1 {
 text-indent: 5px;
 }
-#aajjryzwey .gt_indent_2 {
+#tnwwvswaai .gt_indent_2 {
 text-indent: 10px;
 }
-#aajjryzwey .gt_indent_3 {
+#tnwwvswaai .gt_indent_3 {
 text-indent: 15px;
 }
-#aajjryzwey .gt_indent_4 {
+#tnwwvswaai .gt_indent_4 {
 text-indent: 20px;
 }
-#aajjryzwey .gt_indent_5 {
+#tnwwvswaai .gt_indent_5 {
 text-indent: 25px;
 }
-#aajjryzwey .katex-display {
+#tnwwvswaai .katex-display {
 display: inline-flex !important;
 margin-bottom: 0.75em !important;
 }
-#aajjryzwey div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#tnwwvswaai div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 height: 0px !important;
 }
 </style>
 <table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
   <thead>
     <tr class="gt_col_headings gt_spanner_row">
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Cohort name reference">Cohort name reference</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Cohort name comparator">Cohort name comparator</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Estimate name">Estimate name</th>
-      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3" style="background-color: #D9D9D9; text-align: center; font-weight: bold;" scope="colgroup" id="Variable name">
-        <span class="gt_column_spanner">Variable name</span>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Cohort-name-reference">Cohort name reference</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Cohort-name-comparator">Cohort name comparator</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Estimate-name">Estimate name</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3" style="background-color: #D9D9D9; text-align: center; font-weight: bold;" scope="colgroup" id="spanner-[header_name]Variable name
+[header_level]Only in reference cohort">
+        <div class="gt_column_spanner">Variable name</div>
       </th>
     </tr>
     <tr class="gt_col_headings">
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="Only in reference cohort">Only in reference cohort</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="In both cohorts">In both cohorts</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="Only in comparator cohort">Only in comparator cohort</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="[header_name]Variable-name-[header_level]Only-in-reference-cohort">Only in reference cohort</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="[header_name]Variable-name-[header_level]In-both-cohorts">In both cohorts</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="[header_name]Variable-name-[header_level]Only-in-comparator-cohort">Only in comparator cohort</th>
     </tr>
   </thead>
   <tbody class="gt_table_body">
@@ -917,20 +921,20 @@ medsOverlap &lt;- cdm$meds |&gt;
 <p>As with our overall results, we can quickly create tables and figures
 to view our stratified results.</p>
 <pre class="r"><code>tableCohortOverlap(medsOverlap, uniqueCombinations = FALSE)</code></pre>
-<div id="ccvwzitohr" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#ccvwzitohr table {
+<div id="yeflsydapk" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#yeflsydapk table {
 font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
-#ccvwzitohr thead, #ccvwzitohr tbody, #ccvwzitohr tfoot, #ccvwzitohr tr, #ccvwzitohr td, #ccvwzitohr th {
+#yeflsydapk thead, #yeflsydapk tbody, #yeflsydapk tfoot, #yeflsydapk tr, #yeflsydapk td, #yeflsydapk th {
 border-style: none;
 }
-#ccvwzitohr p {
+#yeflsydapk p {
 margin: 0;
 padding: 0;
 }
-#ccvwzitohr .gt_table {
+#yeflsydapk .gt_table {
 display: table;
 border-collapse: collapse;
 line-height: normal;
@@ -955,11 +959,11 @@ border-left-style: none;
 border-left-width: 2px;
 border-left-color: #D3D3D3;
 }
-#ccvwzitohr .gt_caption {
+#yeflsydapk .gt_caption {
 padding-top: 4px;
 padding-bottom: 4px;
 }
-#ccvwzitohr .gt_title {
+#yeflsydapk .gt_title {
 color: #333333;
 font-size: 125%;
 font-weight: initial;
@@ -970,7 +974,7 @@ padding-right: 5px;
 border-bottom-color: #FFFFFF;
 border-bottom-width: 0;
 }
-#ccvwzitohr .gt_subtitle {
+#yeflsydapk .gt_subtitle {
 color: #333333;
 font-size: 85%;
 font-weight: initial;
@@ -981,7 +985,7 @@ padding-right: 5px;
 border-top-color: #FFFFFF;
 border-top-width: 0;
 }
-#ccvwzitohr .gt_heading {
+#yeflsydapk .gt_heading {
 background-color: #FFFFFF;
 text-align: center;
 border-bottom-color: #FFFFFF;
@@ -992,12 +996,12 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#ccvwzitohr .gt_bottom_border {
+#yeflsydapk .gt_bottom_border {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#ccvwzitohr .gt_col_headings {
+#yeflsydapk .gt_col_headings {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -1011,7 +1015,7 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#ccvwzitohr .gt_col_heading {
+#yeflsydapk .gt_col_heading {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1030,7 +1034,7 @@ padding-left: 5px;
 padding-right: 5px;
 overflow-x: hidden;
 }
-#ccvwzitohr .gt_column_spanner_outer {
+#yeflsydapk .gt_column_spanner_outer {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1041,13 +1045,13 @@ padding-bottom: 0;
 padding-left: 4px;
 padding-right: 4px;
 }
-#ccvwzitohr .gt_column_spanner_outer:first-child {
+#yeflsydapk .gt_column_spanner_outer:first-child {
 padding-left: 0;
 }
-#ccvwzitohr .gt_column_spanner_outer:last-child {
+#yeflsydapk .gt_column_spanner_outer:last-child {
 padding-right: 0;
 }
-#ccvwzitohr .gt_column_spanner {
+#yeflsydapk .gt_column_spanner {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
@@ -1058,10 +1062,10 @@ overflow-x: hidden;
 display: inline-block;
 width: 100%;
 }
-#ccvwzitohr .gt_spanner_row {
+#yeflsydapk .gt_spanner_row {
 border-bottom-style: hidden;
 }
-#ccvwzitohr .gt_group_heading {
+#yeflsydapk .gt_group_heading {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1086,7 +1090,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 text-align: left;
 }
-#ccvwzitohr .gt_empty_group_heading {
+#yeflsydapk .gt_empty_group_heading {
 padding: 0.5px;
 color: #333333;
 background-color: #FFFFFF;
@@ -1100,13 +1104,13 @@ border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 vertical-align: middle;
 }
-#ccvwzitohr .gt_from_md > :first-child {
+#yeflsydapk .gt_from_md > :first-child {
 margin-top: 0;
 }
-#ccvwzitohr .gt_from_md > :last-child {
+#yeflsydapk .gt_from_md > :last-child {
 margin-bottom: 0;
 }
-#ccvwzitohr .gt_row {
+#yeflsydapk .gt_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1124,7 +1128,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 overflow-x: hidden;
 }
-#ccvwzitohr .gt_stub {
+#yeflsydapk .gt_stub {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1136,7 +1140,7 @@ border-right-color: #D3D3D3;
 padding-left: 5px;
 padding-right: 5px;
 }
-#ccvwzitohr .gt_stub_row_group {
+#yeflsydapk .gt_stub_row_group {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1149,13 +1153,13 @@ padding-left: 5px;
 padding-right: 5px;
 vertical-align: top;
 }
-#ccvwzitohr .gt_row_group_first td {
+#yeflsydapk .gt_row_group_first td {
 border-top-width: 2px;
 }
-#ccvwzitohr .gt_row_group_first th {
+#yeflsydapk .gt_row_group_first th {
 border-top-width: 2px;
 }
-#ccvwzitohr .gt_summary_row {
+#yeflsydapk .gt_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -1164,14 +1168,14 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#ccvwzitohr .gt_first_summary_row {
+#yeflsydapk .gt_first_summary_row {
 border-top-style: solid;
 border-top-color: #D3D3D3;
 }
-#ccvwzitohr .gt_first_summary_row.thick {
+#yeflsydapk .gt_first_summary_row.thick {
 border-top-width: 2px;
 }
-#ccvwzitohr .gt_last_summary_row {
+#yeflsydapk .gt_last_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1180,7 +1184,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#ccvwzitohr .gt_grand_summary_row {
+#yeflsydapk .gt_grand_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -1189,7 +1193,7 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#ccvwzitohr .gt_first_grand_summary_row {
+#yeflsydapk .gt_first_grand_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1198,7 +1202,7 @@ border-top-style: double;
 border-top-width: 6px;
 border-top-color: #D3D3D3;
 }
-#ccvwzitohr .gt_last_grand_summary_row_top {
+#yeflsydapk .gt_last_grand_summary_row_top {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1207,10 +1211,10 @@ border-bottom-style: double;
 border-bottom-width: 6px;
 border-bottom-color: #D3D3D3;
 }
-#ccvwzitohr .gt_striped {
+#yeflsydapk .gt_striped {
 background-color: rgba(128, 128, 128, 0.05);
 }
-#ccvwzitohr .gt_table_body {
+#yeflsydapk .gt_table_body {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -1218,7 +1222,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#ccvwzitohr .gt_footnotes {
+#yeflsydapk .gt_footnotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -1231,7 +1235,7 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#ccvwzitohr .gt_footnote {
+#yeflsydapk .gt_footnote {
 margin: 0px;
 font-size: 90%;
 padding-top: 4px;
@@ -1239,7 +1243,7 @@ padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#ccvwzitohr .gt_sourcenotes {
+#yeflsydapk .gt_sourcenotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -1252,82 +1256,83 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#ccvwzitohr .gt_sourcenote {
+#yeflsydapk .gt_sourcenote {
 font-size: 90%;
 padding-top: 4px;
 padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#ccvwzitohr .gt_left {
+#yeflsydapk .gt_left {
 text-align: left;
 }
-#ccvwzitohr .gt_center {
+#yeflsydapk .gt_center {
 text-align: center;
 }
-#ccvwzitohr .gt_right {
+#yeflsydapk .gt_right {
 text-align: right;
 font-variant-numeric: tabular-nums;
 }
-#ccvwzitohr .gt_font_normal {
+#yeflsydapk .gt_font_normal {
 font-weight: normal;
 }
-#ccvwzitohr .gt_font_bold {
+#yeflsydapk .gt_font_bold {
 font-weight: bold;
 }
-#ccvwzitohr .gt_font_italic {
+#yeflsydapk .gt_font_italic {
 font-style: italic;
 }
-#ccvwzitohr .gt_super {
+#yeflsydapk .gt_super {
 font-size: 65%;
 }
-#ccvwzitohr .gt_footnote_marks {
+#yeflsydapk .gt_footnote_marks {
 font-size: 75%;
 vertical-align: 0.4em;
 position: initial;
 }
-#ccvwzitohr .gt_asterisk {
+#yeflsydapk .gt_asterisk {
 font-size: 100%;
 vertical-align: 0;
 }
-#ccvwzitohr .gt_indent_1 {
+#yeflsydapk .gt_indent_1 {
 text-indent: 5px;
 }
-#ccvwzitohr .gt_indent_2 {
+#yeflsydapk .gt_indent_2 {
 text-indent: 10px;
 }
-#ccvwzitohr .gt_indent_3 {
+#yeflsydapk .gt_indent_3 {
 text-indent: 15px;
 }
-#ccvwzitohr .gt_indent_4 {
+#yeflsydapk .gt_indent_4 {
 text-indent: 20px;
 }
-#ccvwzitohr .gt_indent_5 {
+#yeflsydapk .gt_indent_5 {
 text-indent: 25px;
 }
-#ccvwzitohr .katex-display {
+#yeflsydapk .katex-display {
 display: inline-flex !important;
 margin-bottom: 0.75em !important;
 }
-#ccvwzitohr div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#yeflsydapk div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 height: 0px !important;
 }
 </style>
 <table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
   <thead>
     <tr class="gt_col_headings gt_spanner_row">
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Cohort name reference">Cohort name reference</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Cohort name comparator">Cohort name comparator</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Age group">Age group</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Estimate name">Estimate name</th>
-      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3" style="background-color: #D9D9D9; text-align: center; font-weight: bold;" scope="colgroup" id="Variable name">
-        <span class="gt_column_spanner">Variable name</span>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Cohort-name-reference">Cohort name reference</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Cohort-name-comparator">Cohort name comparator</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Age-group">Age group</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" style="text-align: center; font-weight: bold;" scope="col" id="Estimate-name">Estimate name</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3" style="background-color: #D9D9D9; text-align: center; font-weight: bold;" scope="colgroup" id="spanner-[header_name]Variable name
+[header_level]Only in reference cohort">
+        <div class="gt_column_spanner">Variable name</div>
       </th>
     </tr>
     <tr class="gt_col_headings">
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="Only in reference cohort">Only in reference cohort</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="In both cohorts">In both cohorts</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="Only in comparator cohort">Only in comparator cohort</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="[header_name]Variable-name-[header_level]Only-in-reference-cohort">Only in reference cohort</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="[header_name]Variable-name-[header_level]In-both-cohorts">In both cohorts</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" style="background-color: #E1E1E1; text-align: center; font-weight: bold;" scope="col" id="[header_name]Variable-name-[header_level]Only-in-comparator-cohort">Only in comparator cohort</th>
     </tr>
   </thead>
   <tbody class="gt_table_body">
@@ -1521,7 +1526,6 @@ height: 0px !important;
 </div>
 <pre class="r"><code>plotCohortOverlap(
   medsOverlap,
-  y = c(&quot;cohort_name_reference&quot;, &quot;cohort_name_comparator&quot;),
   facet = c(&quot;age_group&quot;),
   uniqueCombinations = TRUE
 )</code></pre>
