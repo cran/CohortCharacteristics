@@ -4,20 +4,15 @@ knitr::opts_chunk$set(
   comment = "#>", message = FALSE, warning = FALSE
 )
 
-CDMConnector::requireEunomia()
-
 ## -----------------------------------------------------------------------------
-library(duckdb)
+library(omock)
 library(CDMConnector)
 library(dplyr, warn.conflicts = FALSE)
 library(CodelistGenerator)
 library(PatientProfiles)
 library(CohortCharacteristics)
 
-con <- dbConnect(duckdb(), dbdir = eunomiaDir())
-cdm <- cdmFromCon(
-  con = con, cdmSchem = "main", writeSchema = "main", cdmName = "Eunomia"
-)
+cdm <- mockCdmFromDataset(datasetName = "GiBleed", source = "duckdb")
 
 medsCs <- getDrugIngredientCodes(
   cdm = cdm,

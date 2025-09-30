@@ -72,15 +72,9 @@ omopgenerics::settingsColumns
 #' @examples
 #' \donttest{
 #' library(CohortCharacteristics)
-#' library(CDMConnector)
 #'
 #' cdm <- mockCohortCharacteristics()
 #'
-#' mockDisconnect(cdm = cdm)
 #' }
 #'
 mockCohortCharacteristics <- PatientProfiles::mockPatientProfiles
-
-#' @importFrom PatientProfiles mockDisconnect
-#' @export
-PatientProfiles::mockDisconnect

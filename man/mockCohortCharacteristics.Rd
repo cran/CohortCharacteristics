@@ -35,11 +35,9 @@ It creates a mock database for testing CohortCharacteristics package
 \examples{
 \donttest{
 library(CohortCharacteristics)
-library(CDMConnector)
 
 cdm <- mockCohortCharacteristics()
 
-mockDisconnect(cdm = cdm)
 }
 
 }

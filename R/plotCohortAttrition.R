@@ -50,7 +50,6 @@
 #'   filter(group_level == "cohort_2") |>
 #'   plotCohortAttrition()
 #'
-#' mockDisconnect(cdm)
 #' }
 #'
 plotCohortAttrition <- function(result,

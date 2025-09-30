@@ -61,13 +61,15 @@ test_that("basic functionality summarise large scale characteristics", {
     )),
     condition_type_concept_id = 32020L
   )
-  con <- connection()
   cdm <- mockCohortCharacteristics(
-    con = con, writeSchema = writeSchema(),
-    person = person, observation_period = observation_period,
-    cohort_interest = cohort_interest, drug_exposure = drug_exposure,
+    person = person,
+    observation_period = observation_period,
+    cohort_interest = cohort_interest,
+    drug_exposure = drug_exposure,
     condition_occurrence = condition_occurrence
-  )
+  ) |>
+    copyCdm()
+
   concept <- dplyr::tibble(
     concept_id = c(1125315L, 1503328L, 1516978L, 317009L, 378253L, 4266367L),
     domain_id = NA_character_,
@@ -78,9 +80,7 @@ test_that("basic functionality summarise large scale characteristics", {
     valid_end_date = as.Date("2099-01-01")
   ) |>
     dplyr::mutate(concept_name = paste0("concept: ", .data$concept_id))
-  name <- CDMConnector::inSchema(schema = writeSchema(), table = "concept")
-  DBI::dbWriteTable(conn = con, name = name, value = concept, overwrite = TRUE)
-  cdm$concept <- dplyr::tbl(con, name)
+  cdm <- omopgenerics::insertTable(cdm = cdm, name = "concept", table = concept)
 
   expect_no_error(
     result <- cdm$cohort_interest |>
@@ -267,9 +267,8 @@ test_that("basic functionality summarise large scale characteristics", {
 
   # create eunomia reference
   dbName <- "GiBleed"
-  CDMConnector::requireEunomia(datasetName = dbName)
-  con <- duckdb::dbConnect(drv = duckdb::duckdb(dbdir = CDMConnector::eunomiaDir(datasetName = dbName)))
-  cdm <- CDMConnector::cdmFromCon(con = con, cdmSchema = "main", writeSchema = "main")
+  cdm <- omock::mockCdmFromDataset(datasetName = dbName, source = "local") |>
+    copyCdm()
 
   cdm <- CDMConnector::generateConceptCohortSet(cdm = cdm,
                                                 conceptSet = list(avp = 4112343),
@@ -337,16 +336,15 @@ test_that("basic functionality summarise large scale characteristics", {
   expect_true("source_concept_id" %in% colnames(result2))
   expect_true("source_concept_name" %in% colnames(result2))
 
+  dropCreatedTables(cdm = cdm)
+
   # explore atc
   dbName <- "synthea-covid19-10k"
-  CDMConnector::requireEunomia(datasetName = dbName)
-  cdm <- dbName |>
-    CDMConnector::eunomiaDir() |>
-    duckdb::duckdb() |>
-    duckdb::dbConnect() |>
-    CDMConnector::cdmFromCon(cdmSchema = "main", writeSchema = "main") |>
-    CDMConnector::generateConceptCohortSet(conceptSet = list(cva = 381316),
-                                           name = "my_cohort")
+  cdm <- omock::mockCdmFromDataset(datasetName = dbName, source = "local") |>
+    copyCdm()
+  cdm <- CDMConnector::generateConceptCohortSet(
+    cdm = cdm, conceptSet = list(cva = 381316), name = "my_cohort"
+  )
   # atc 3rd
   expect_no_error(
     result1 <- cdm$my_cohort |>
@@ -391,4 +389,5 @@ test_that("basic functionality summarise large scale characteristics", {
     dplyr::select(!c("source_concept_id", "source_concept_name"))
   expect_identical(atc_result1, atc_result2)
 
+  dropCreatedTables(cdm = cdm)
 })

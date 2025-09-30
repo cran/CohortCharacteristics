@@ -49,7 +49,6 @@ result |>
   filter(group_level == "cohort_2") |>
   plotCohortAttrition()
 
-mockDisconnect(cdm)
 }
 
 }
