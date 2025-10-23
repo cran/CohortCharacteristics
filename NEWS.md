@@ -1,3 +1,8 @@
+
+# CohortCharacteristics 1.0.2
+
+* Update documentation compatibility with PatientProfiles by @catalamarti
+
 # CohortCharacteristics 1.0.1
 
 * Update tests with copyCdm() (compatibility with PatientProfiles) by @catalamarti in #357

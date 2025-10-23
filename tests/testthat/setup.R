@@ -1,4 +1,8 @@
 
+print(Sys.getenv("MOCK_DATASETS_FOLDER"))
+print(omock::isMockDatasetDownloaded(datasetName = "synthea-covid19-10k"))
+print(omock::isMockDatasetDownloaded(datasetName = "GiBleed"))
+
 dbToTest <- Sys.getenv("DB_TO_TEST", "duckdb")
 copyCdm <- function(cdm) {
   if (dbToTest == "duckdb") {

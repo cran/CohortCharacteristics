@@ -1,5 +1,6 @@
 test_that("basic functionality summarise large scale characteristics", {
   skip_on_cran()
+
   person <- dplyr::tibble(
     person_id = c(1L, 2L),
     gender_concept_id = c(8507L, 8532L),
@@ -200,70 +201,70 @@ test_that("basic functionality summarise large scale characteristics", {
   cdm$cohort1 <- cdm$cohort1 |>
     dplyr::mutate(my_strata = NA)
   expect_warning(cdm$cohort1 |>
-    summariseLargeScaleCharacteristics(
-      eventInWindow = c("condition_occurrence", "drug_exposure"),
-      strata = list("my_strata"),
-      minimumFrequency = 0
-    ))
+                   summariseLargeScaleCharacteristics(
+                     eventInWindow = c("condition_occurrence", "drug_exposure"),
+                     strata = list("my_strata"),
+                     minimumFrequency = 0
+                   ))
   # some missing
   expect_warning(cdm$cohort1 |>
-    dplyr::mutate(my_strata_2 = dplyr::if_else(row_number() == 1,
-      "1", NA
-    )) |>
-    summariseLargeScaleCharacteristics(
-      eventInWindow = c("condition_occurrence", "drug_exposure"),
-      strata = list("my_strata_2"),
-      minimumFrequency = 0
-    ))
+                   dplyr::mutate(my_strata_2 = dplyr::if_else(row_number() == 1,
+                                                              "1", NA
+                   )) |>
+                   summariseLargeScaleCharacteristics(
+                     eventInWindow = c("condition_occurrence", "drug_exposure"),
+                     strata = list("my_strata_2"),
+                     minimumFrequency = 0
+                   ))
   # multiple variables
   expect_warning(expect_warning(cdm$cohort1 |>
-    dplyr::mutate(
-      my_strata_1 = NA,
-      my_strata_2 = dplyr::if_else(row_number() == 1,
-        "1", NA
-      ),
-      my_strata_3 = 1L
-    ) |>
-    summariseLargeScaleCharacteristics(
-      eventInWindow = c("condition_occurrence", "drug_exposure"),
-      strata = list(
-        "my_strata_1",
-        "my_strata_2",
-        "my_strata_3"
-      ),
-      minimumFrequency = 0
-    )))
+                                  dplyr::mutate(
+                                    my_strata_1 = NA,
+                                    my_strata_2 = dplyr::if_else(row_number() == 1,
+                                                                 "1", NA
+                                    ),
+                                    my_strata_3 = 1L
+                                  ) |>
+                                  summariseLargeScaleCharacteristics(
+                                    eventInWindow = c("condition_occurrence", "drug_exposure"),
+                                    strata = list(
+                                      "my_strata_1",
+                                      "my_strata_2",
+                                      "my_strata_3"
+                                    ),
+                                    minimumFrequency = 0
+                                  )))
 
   # minimum frequencey
   expect_message(result <- cdm$cohort_interest |>
-    summariseLargeScaleCharacteristics(
-      eventInWindow = c("condition_occurrence", "drug_exposure"),
-      minimumFrequency = 0.5
-    ))
+                   summariseLargeScaleCharacteristics(
+                     eventInWindow = c("condition_occurrence", "drug_exposure"),
+                     minimumFrequency = 0.5
+                   ))
 
   # empty event table
   cdm$visit_occurrence <- cdm$visit_occurrence |>
     dplyr::filter(visit_occurrence_id == 9999)
   expect_no_error(cdm$cohort_interest |>
-    summariseLargeScaleCharacteristics(
-      episodeInWindow = c("visit_occurrence"),
-      minimumFrequency = 0
-    ))
+                    summariseLargeScaleCharacteristics(
+                      episodeInWindow = c("visit_occurrence"),
+                      minimumFrequency = 0
+                    ))
   # empty cohort, empty event table
   cdm$cohort2 <- cdm$cohort2 |>
     dplyr::filter(cohort_definition_id == 9999)
   expect_no_error(cdm$cohort2 |>
-    summariseLargeScaleCharacteristics(
-      episodeInWindow = c("visit_occurrence"),
-      minimumFrequency = 0
-    ))
+                    summariseLargeScaleCharacteristics(
+                      episodeInWindow = c("visit_occurrence"),
+                      minimumFrequency = 0
+                    ))
   # empty cohort, empty event table, strata all missing
   expect_no_error(cdm$cohort2 |>
-    dplyr::mutate(my_strata_1 = NA) |>
-    summariseLargeScaleCharacteristics(
-      episodeInWindow = c("visit_occurrence"),
-      minimumFrequency = 0
-    ))
+                    dplyr::mutate(my_strata_1 = NA) |>
+                    summariseLargeScaleCharacteristics(
+                      episodeInWindow = c("visit_occurrence"),
+                      minimumFrequency = 0
+                    ))
 
   # create eunomia reference
   dbName <- "GiBleed"
@@ -338,10 +339,13 @@ test_that("basic functionality summarise large scale characteristics", {
 
   dropCreatedTables(cdm = cdm)
 
+  skip("github tests break if we load the covid db")
+
   # explore atc
   dbName <- "synthea-covid19-10k"
   cdm <- omock::mockCdmFromDataset(datasetName = dbName, source = "local") |>
     copyCdm()
+
   cdm <- CDMConnector::generateConceptCohortSet(
     cdm = cdm, conceptSet = list(cva = 381316), name = "my_cohort"
   )
