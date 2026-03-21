@@ -2,7 +2,7 @@ Package: CohortCharacteristics
 Type: Package
 Title: Summarise and Visualise Characteristics of Patients in the OMOP
         CDM
-Version: 1.1.1
+Version: 1.1.2
 Authors@R: c(
     person("Martí", "Català", , "marti.catalasabate@ndorms.ox.ac.uk", 
     role = c("aut", "cre"), comment = c(ORCID = "0000-0003-3308-9905")),
@@ -43,7 +43,7 @@ Suggests: CodelistGenerator, visOmopResults (>= 1.2.0),
         omock, plotly, png, reactable, rmarkdown, RPostgres, rsvg,
         scales, spelling, testthat (>= 3.1.5), tictoc, withr, extrafont
 NeedsCompilation: no
-Packaged: 2026-01-28 14:04:17 UTC; martics
+Packaged: 2026-03-21 01:06:38 UTC; martics
 Author: Martí Català [aut, cre] (ORCID:
     <https://orcid.org/0000-0003-3308-9905>),
   Yuchen Guo [aut] (ORCID: <https://orcid.org/0000-0002-0847-4855>),
@@ -54,4 +54,4 @@ Author: Martí Català [aut, cre] (ORCID:
     <https://orcid.org/0009-0006-7948-3747>),
   Marta Alcalde [aut] (ORCID: <https://orcid.org/0009-0002-4405-1814>)
 Repository: CRAN
-Date/Publication: 2026-01-28 16:40:02 UTC
+Date/Publication: 2026-03-21 06:10:09 UTC
