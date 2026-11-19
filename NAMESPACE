@@ -38,17 +38,21 @@ export(tableTopLargeScaleCharacteristics)
 export(tidy)
 importFrom(dplyr,"%>%")
 importFrom(lifecycle,deprecated)
-importFrom(omopgenerics,additionalColumns)
-importFrom(omopgenerics,bind)
-importFrom(omopgenerics,exportSummarisedResult)
-importFrom(omopgenerics,groupColumns)
-importFrom(omopgenerics,importSummarisedResult)
-importFrom(omopgenerics,settings)
-importFrom(omopgenerics,settingsColumns)
-importFrom(omopgenerics,strataColumns)
-importFrom(omopgenerics,suppress)
-importFrom(omopgenerics,tidy)
-importFrom(rlang,"%||%")
-importFrom(rlang,":=")
-importFrom(rlang,.data)
-importFrom(rlang,.env)
+importFrom(omopgenerics,
+  additionalColumns,
+  bind,
+  exportSummarisedResult,
+  groupColumns,
+  importSummarisedResult,
+  settings,
+  settingsColumns,
+  strataColumns,
+  suppress,
+  tidy
+)
+importFrom(rlang,
+  "%||%",
+  ":=",
+  .data,
+  .env
+)

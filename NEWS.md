@@ -1,3 +1,8 @@
+
+# CohortCharacteristics 1.1.4
+
+* Fix edge case with large scale characteristics in Databricks by @cecicampanile in #423
+
 # CohortCharacteristics 1.1.3
 
 * optimise lsc by @edward-burn in #406
